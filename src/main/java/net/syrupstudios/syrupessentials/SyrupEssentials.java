@@ -9,14 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SyrupEssentials implements ModInitializer {
-    public static final String MOD_ID = "cozystudiosessentials";
+    public static final String MOD_ID = "syrupessentials";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static PlayerDataManager playerDataManager;
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Initializing Cozy Studios Essentials!");
+        LOGGER.info("Initializing Syrup Essentials!");
 
         // Register commands
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

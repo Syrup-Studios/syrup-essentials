@@ -20,22 +20,22 @@ public class PlayerDataManager {
     public PlayerDataManager(MinecraftServer server) {
         this.playerDataMap = new HashMap<>();
 
-        // Save in the world folder: <world>/cozy_essentials_data/
+        // Save in the world folder: <world>/syrup_essential_data/
         // Get the world directory from the overworld
         File worldDirectory = server.getRunDirectory();
         if (server.getOverworld() != null) {
             worldDirectory = server.getOverworld().getServer().getRunDirectory();
         }
 
-        // Navigate to saves/<world_name>/cozy_essentials_data
+        // Navigate to saves/<world_name>/syrup_essential_data
         File savesDir = new File(worldDirectory, "saves");
         if (server.getSaveProperties() != null) {
             String worldName = server.getSaveProperties().getLevelName();
             File worldDir = new File(savesDir, worldName);
-            this.dataDirectory = new File(worldDir, "cozy_essentials_data");
+            this.dataDirectory = new File(worldDir, "syrup_essential_data");
         } else {
             // Fallback
-            this.dataDirectory = new File(worldDirectory, "cozy_essentials_data");
+            this.dataDirectory = new File(worldDirectory, "syrup_essential_data");
         }
 
         if (!dataDirectory.exists()) {
