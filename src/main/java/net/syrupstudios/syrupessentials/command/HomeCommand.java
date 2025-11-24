@@ -76,10 +76,10 @@ public class HomeCommand {
         SyrupEssentials.getPlayerDataManager().savePlayerData(player);
 
         if (isUpdate) {
-            player.sendMessage(Text.literal("Home '" + homeName + "' updated!").formatted(Formatting.GREEN), false);
+            player.sendMessage(Text.literal("Home '" + homeName + "' updated!").formatted(Formatting.GREEN), true);
         } else {
             player.sendMessage(Text.literal("Home '" + homeName + "' set! (" +
-                    data.getHomeCount() + "/" + data.getMaxHomes() + ")").formatted(Formatting.GREEN), false);
+                    data.getHomeCount() + "/" + data.getMaxHomes() + ")").formatted(Formatting.GREEN), true);
         }
 
         return 1;
@@ -93,7 +93,7 @@ public class HomeCommand {
         PlayerData.HomeData home = data.getHome(homeName);
 
         if (home == null) {
-            player.sendMessage(Text.literal("Home '" + homeName + "' not found!").formatted(Formatting.RED), false);
+            player.sendMessage(Text.literal("Home '" + homeName + "' not found!").formatted(Formatting.RED), true);
             return 0;
         }
 
@@ -101,10 +101,10 @@ public class HomeCommand {
         boolean success = TeleportUtil.teleportPlayer(player, home);
 
         if (success) {
-            player.sendMessage(Text.literal("Teleported to home '" + homeName + "'!").formatted(Formatting.GREEN), false);
+            player.sendMessage(Text.literal("Teleported to home '" + homeName + "'!").formatted(Formatting.GREEN), true);
             return 1;
         } else {
-            player.sendMessage(Text.literal("Failed to teleport to home!").formatted(Formatting.RED), false);
+            player.sendMessage(Text.literal("Failed to teleport to home!").formatted(Formatting.RED), true);
             return 0;
         }
     }
@@ -117,10 +117,10 @@ public class HomeCommand {
 
         if (data.removeHome(homeName)) {
             SyrupEssentials.getPlayerDataManager().savePlayerData(player);
-            player.sendMessage(Text.literal("Home '" + homeName + "' deleted!").formatted(Formatting.GREEN), false);
+            player.sendMessage(Text.literal("Home '" + homeName + "' deleted!").formatted(Formatting.GREEN), true);
             return 1;
         } else {
-            player.sendMessage(Text.literal("Home '" + homeName + "' not found!").formatted(Formatting.RED), false);
+            player.sendMessage(Text.literal("Home '" + homeName + "' not found!").formatted(Formatting.RED), true);
             return 0;
         }
     }
@@ -130,7 +130,7 @@ public class HomeCommand {
         PlayerData data = SyrupEssentials.getPlayerDataManager().getPlayerData(player);
 
         if (data.getHomeCount() == 0) {
-            player.sendMessage(Text.literal("You don't have any homes set!").formatted(Formatting.YELLOW), false);
+            player.sendMessage(Text.literal("You don't have any homes set!").formatted(Formatting.YELLOW), true);
             return 0;
         }
 
