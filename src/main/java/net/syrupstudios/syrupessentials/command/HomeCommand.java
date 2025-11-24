@@ -67,7 +67,7 @@ public class HomeCommand {
         // Check if player has reached max homes
         if (!isUpdate && data.getHomeCount() >= data.getMaxHomes()) {
             player.sendMessage(Text.literal("You have reached your maximum number of homes (" +
-                    data.getMaxHomes() + ")!").formatted(Formatting.RED), false);
+                    data.getMaxHomes() + ")!").formatted(Formatting.RED), true);
             return 0;
         }
 
