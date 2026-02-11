@@ -1,7 +1,7 @@
 package net.syrupstudios.syrupessentials.util;
 
 import net.syrupstudios.syrupessentials.data.PlayerData;
-import net.syrupstudios.syrupessentials.data.HomeData; // Added import
+import net.syrupstudios.syrupessentials.data.HomeData;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
