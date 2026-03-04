@@ -24,7 +24,6 @@ loom {
 	mods {
 		"syrup-essentials" {
 			sourceSet sourceSets.main
-			sourceSet sourceSets.client
 		}
 	}
 
