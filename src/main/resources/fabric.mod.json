@@ -16,7 +16,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.syrupstudios.SyrupEssentials"
+			"net.syrupstudios.syrupessentials.SyrupEssentials"
 		],
 		"client": [
 			"net.syrupstudios.SyrupEssentialsClient"

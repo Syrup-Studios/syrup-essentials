@@ -1,4 +1,4 @@
-package net.syrupstudios;
+package net.syrupstudios.syrupessentials;
 
 import net.fabricmc.api.ModInitializer;
 
