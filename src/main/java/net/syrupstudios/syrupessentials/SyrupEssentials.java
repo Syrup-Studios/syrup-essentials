@@ -2,23 +2,53 @@ package net.syrupstudios.syrupessentials;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.syrupstudios.syrupessentials.commands.TeleportCommands;
+import net.syrupstudios.syrupessentials.data.PlayerData;
+import net.syrupstudios.syrupessentials.util.DataManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SyrupEssentials implements ModInitializer {
 	public static final String MOD_ID = "syrup-essentials";
+	private DataManager dataManager;
 
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+		CommandRegistrationCallback.EVENT.register((
+				(commandDispatcher, commandBuildContext, commandSelection) ->
+						TeleportCommands.register(commandDispatcher)));
 
-		LOGGER.info("Hello Fabric world!");
+		ServerLifecycleEvents.SERVER_STARTED.register((server) ->
+				dataManager = new DataManager(server));
+
+		ServerPlayConnectionEvents.JOIN.register((phase, listener, server) ->
+					playerJoin(phase, server));
+
+		ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
+	}
+
+	private void playerJoin(ServerGamePacketListenerImpl phase, MinecraftServer server) {
+		try {
+			dataManager.loadPlayer(PlayerData.getOrCreate(server, phase.player.getUUID()).orElseThrow());
+		}
+		catch (Exception e) {
+			LOGGER.error("Error Loading Player: {}", phase.getPlayer().getDisplayName().getString());
+		}
+	}
+
+	private void playerLeave(ServerGamePacketListenerImpl phase, MinecraftServer server) {
+		try {
+			dataManager.savePlayer(PlayerData.getOrCreate(phase.getPlayer()).orElseThrow());
+		}
+		catch (Exception e) {
+			LOGGER.error("Error Saving Player: {}", phase.getPlayer().getDisplayName().getString());
+		}
 	}
 }

@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Data
@@ -40,6 +41,10 @@ public abstract class Locations {
         for (String key : tag.getAllKeys()) {
             destinations.put(key, TeleportPos.fromNBT(tag.getCompound(key)));
         }
+    }
+
+    public String listNames(){
+        return String.join(System.lineSeparator(), destinations.keySet());
     }
 
 

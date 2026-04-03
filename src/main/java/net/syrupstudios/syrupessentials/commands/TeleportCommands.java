@@ -6,20 +6,25 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.syrupstudios.syrupessentials.data.PlayerData;
+import net.syrupstudios.syrupessentials.util.CommandUtil;
+import net.syrupstudios.syrupessentials.util.TeleportPos;
+
+import java.util.Objects;
 
 public class TeleportCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        //TODO: TPA is its own command fuckface, tpaccept tpdeny
         dispatcher.register(Commands.literal("tpa")
                 .then(Commands.argument("player", EntityArgument.player())
-                        .executes(TeleportCommands::tpa))
-                .then(Commands.literal("accept")
-                        .executes(TeleportCommands::tpaAccept))
-                .then(Commands.literal("deny")
-                        .executes(TeleportCommands::tpaDeny)));
+                        .executes(TeleportCommands::tpa)));
+
+        dispatcher.register(Commands.literal("tpaccept")
+                .executes(TeleportCommands::tpaAccept));
+
+        dispatcher.register(Commands.literal("tpdeny")
+                .executes(TeleportCommands::tpaDeny));
 
         dispatcher.register(Commands.literal("home")
                 .then(Commands.argument("home_name", StringArgumentType.string())
@@ -78,17 +83,32 @@ public class TeleportCommands {
     }
 
     private static int setHome(CommandContext<CommandSourceStack> context) {
-        return 0;
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+
+            PlayerData.getOrCreate(serverPlayer).orElseThrow().addHome(context.getInput(), serverPlayer);
+            CommandUtil.commandSuccess(
+                    String.format("Successfully added home: %s", context.getInput()), context);
+        }
+        catch (Exception e){
+            CommandUtil.commandFailure("Unable to Set Home", context);
+        }
+        return 1;
     }
 
     private static int listHomes(CommandContext<CommandSourceStack> context) {
-
         try{
-            ServerPlayer player = context.getSource().getPlayerOrException();
+            CommandUtil.commandSuccess(
+                    PlayerData.getOrCreate(context.getSource().getPlayerOrException())
+                            .orElseThrow()
+                            .getHomes()
+                            .listNames(),
+                    context
+            );
 
         }
         catch (Exception e) {
-           context.getSource().getPlayer().sendSystemMessage(Component.literal(""));
+           CommandUtil.commandFailure("Unable To List Homes", context);
         }
         return 1;
     }
@@ -106,7 +126,29 @@ public class TeleportCommands {
     }
 
     private static int namedHome(CommandContext<CommandSourceStack> context) {
-        return 0;
+        try {
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = PlayerData.getOrCreate(serverPlayer).orElseThrow();
+            player.addTeleportHistory(serverPlayer);
+
+            if(player.getHomes().getDestinations().containsKey(context.getInput())){
+                TeleportPos tpos = player.getHomes().getDestinations().get(context.getInput());
+                serverPlayer.teleportTo(
+                        Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
+                        tpos.getPos().getX(),
+                        tpos.getPos().getY(),
+                        tpos.getPos().getZ(),
+                        0,
+                        0
+                );
+            }
+            else {
+                CommandUtil.commandFailure(String.format("No home with name: %s", context.getInput()), context);
+            }
+        } catch (Exception e) {
+            CommandUtil.commandFailure("Unable To Teleport player to desired home", context);
+        }
+        return 1;
     }
 
     private static int tpaDeny(CommandContext<CommandSourceStack> context) {

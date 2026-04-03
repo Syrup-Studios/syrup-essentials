@@ -85,7 +85,7 @@ public class PlayerData {
         getOrCreate(player).ifPresent(data -> data.addTeleportHistory(new TeleportPos(dimension, pos)));
     }
 
-    public static void addTeleportHistory(ServerPlayer player) {
+    public void addTeleportHistory(ServerPlayer player) {
         addTeleportHistory(player, player.level().dimension(), player.blockPosition());
     }
 
@@ -100,7 +100,7 @@ public class PlayerData {
     }
 
     public void addHome(String name, ServerPlayer serverPlayer){
-        this.homes.addHome(name, new TeleportPos(serverPlayer.level().dimension(), serverPlayer.blockPosition()));
+        this.homes.addHome(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition()));
     }
 
     public void popLocationHistory() {
