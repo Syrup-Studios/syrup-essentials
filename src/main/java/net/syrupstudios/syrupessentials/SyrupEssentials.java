@@ -21,6 +21,7 @@ public class SyrupEssentials implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		LOGGER.info("Initializing Syrup Essentials");
 		CommandRegistrationCallback.EVENT.register((
 				(commandDispatcher, commandBuildContext, commandSelection) ->
 						TeleportCommands.register(commandDispatcher)));

@@ -17,18 +17,9 @@
 	"entrypoints": {
 		"main": [
 			"net.syrupstudios.syrupessentials.SyrupEssentials"
-		],
-		"client": [
-			"net.syrupstudios.SyrupEssentialsClient"
 		]
 	},
-	"mixins": [
-		"syrup-essentials.mixins.json",
-		{
-			"config": "syrup-essentials.client.mixins.json",
-			"environment": "client"
-		}
-	],
+	"mixins": [],
 	"depends": {
 		"fabricloader": ">=0.18.4",
 		"minecraft": "~1.20.1",
