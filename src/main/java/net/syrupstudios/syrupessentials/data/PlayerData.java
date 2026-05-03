@@ -111,7 +111,7 @@ public class PlayerData {
     }
 
     public void readNbt(CompoundTag tag){
-        Optional<PlayerData> readPlayer = CODEC.parse(NbtOps.INSTANCE, tag)
+        Optional<PlayerData> readPlayer = CODEC.parse(NbtOps.INSTANCE, tag.get("playerData"))
                 .resultOrPartial(LOGGER::error);
 
         if (readPlayer.isPresent()){
