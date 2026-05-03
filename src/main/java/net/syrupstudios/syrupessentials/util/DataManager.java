@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.entity.player.Player;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
 import org.jetbrains.annotations.Nullable;
@@ -11,8 +12,12 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public class DataManager {
@@ -25,7 +30,7 @@ public class DataManager {
     private final File playerDirectory;
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
-    private PlayerData playerData;
+    private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
     private WorldData worldData;
     @Nullable
     private static DataManager INSTANCE;
@@ -35,8 +40,6 @@ public class DataManager {
         this.worldDirectory = dataDirectory.toPath().resolve(WORLD_PATH).toFile();
         this.playerDirectory = dataDirectory.toPath().resolve(PLAYER_PATH).toFile();
         this.minecraftServer = server;
-        this.playerData = new PlayerData();
-        this.worldData = new WorldData();
         
         mkDirsIfNotExisting(dataDirectory);
         mkDirsIfNotExisting(worldDirectory);
@@ -54,19 +57,21 @@ public class DataManager {
     }
 
     public void loadPlayer(UUID playerUUID) {
-
-        if (Files.exists(Paths.get(PLAYER_PATH, playerUUID + ".snbt"))) {
+        Path path = Paths.get(PLAYER_PATH, playerUUID + ".snbt");
+        PlayerData playerData = getOrCreate(minecraftServer,playerUUID).orElseThrow();
+        if (Files.exists(path)) {
             try {
-                this.playerData = PlayerData.getOrCreate(minecraftServer,playerUUID).orElseThrow();
                 File playerFile = playerDirectory.toPath().resolve(playerUUID+".snbt").toFile();
                 playerData.readNbt(NbtIo.read(playerFile));
+                PLAYERS.put(playerUUID, playerData);
             } catch (Exception e) {
                 LOGGER.error("Error while reading player data: {}", e.getMessage());
             }
         }
         else {
             try {
-                Files.createFile(Paths.get(PLAYER_PATH, playerUUID + ".snbt"));
+                Files.createFile(path);
+                PLAYERS.put(playerUUID, playerData);
             } catch (Exception e) {
                 LOGGER.error("Error while creating player data: {}", e.getMessage());
             }
@@ -177,6 +182,24 @@ public class DataManager {
 
     private static void appendIndent(StringBuilder sb, int indent) {
         sb.append("  ".repeat(Math.max(0, indent)));
+    }
+
+    public static Optional<PlayerData> getOrCreate(MinecraftServer server, UUID playerId) {
+        if (PLAYERS.containsKey(playerId)) {
+            return Optional.of(PLAYERS.get(playerId));
+        }
+
+        // Check if the player file exists
+        return server.getProfileCache().get(playerId)
+                .map(profile -> PLAYERS.computeIfAbsent(playerId, k -> new PlayerData(playerId, profile.getName())));
+    }
+
+    public static Optional<PlayerData> getOrCreate(@Nullable Player player) {
+        if (player == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(PLAYERS.computeIfAbsent(player.getUUID(), k -> new PlayerData(player.getUUID(), player.getGameProfile().getName())));
     }
 
 }

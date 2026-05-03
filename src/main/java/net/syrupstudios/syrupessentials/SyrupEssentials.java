@@ -32,7 +32,7 @@ public class SyrupEssentials implements ModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((phase, listener, server) ->
 					playerJoin(phase, server));
 
-		//ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
+		ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
 	}
 
 	private void playerJoin(ServerGamePacketListenerImpl phase, MinecraftServer server) {
@@ -46,7 +46,7 @@ public class SyrupEssentials implements ModInitializer {
 
 	private void playerLeave(ServerGamePacketListenerImpl phase, MinecraftServer server) {
 		try {
-			dataManager.savePlayer(PlayerData.getOrCreate(phase.getPlayer()).orElseThrow());
+			dataManager.savePlayer(DataManager.getOrCreate(phase.getPlayer()).orElseThrow());
 		}
 		catch (Exception e) {
 			LOGGER.error("Error Saving Player: {}", phase.getPlayer().getDisplayName().getString());

@@ -9,27 +9,24 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.syrupstudios.syrupessentials.util.DataManager;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 @Data
 public class PlayerData {
-    private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final int MAX_HISTORY_LOCATIONS = 10;
     private final UUID playerId;
     private final String playerName;
+    @Nullable
     private TeleportPos lastLocation;
     private Homes homes;
     private LinkedList<TeleportPos> locationHistory;
@@ -38,11 +35,6 @@ public class PlayerData {
     private boolean canFly;
     private boolean godmode;
     private String nickname;
-
-    public PlayerData(){
-        this.playerId = null;
-        this.playerName = null;
-    }
 
     public PlayerData(UUID playerId, String playerName) {
         this.playerId = playerId;
@@ -56,10 +48,9 @@ public class PlayerData {
         this.nickname = "";
     }
 
-    public PlayerData(UUID playerId, String playerName, TeleportPos lastLocation, Homes homes, boolean isMuted, boolean canFly, boolean godmode, String nickname) {
+    public PlayerData(UUID playerId, String playerName, Homes homes, boolean isMuted, boolean canFly, boolean godmode, String nickname) {
         this.playerId = playerId;
         this.playerName = playerName;
-        this.lastLocation = lastLocation;
         this.homes = homes;
         this.isMuted = isMuted;
         this.canFly = canFly;
@@ -70,7 +61,6 @@ public class PlayerData {
     public static final Codec<PlayerData> CODEC = RecordCodecBuilder.create(builder -> builder.group(
             UUIDUtil.CODEC.fieldOf("playerId").forGetter(playerData -> playerData.playerId),
             Codec.STRING.fieldOf("playerName").forGetter(playerData ->playerData.playerName),
-            TeleportPos.CODEC.fieldOf("lastLocation").forGetter(playerData -> playerData.lastLocation),
             Homes.CODEC.fieldOf("homes").forGetter(playerData -> playerData.homes),
             Codec.BOOL.fieldOf("isMuted").forGetter(playerData -> playerData.isMuted),
             Codec.BOOL.fieldOf("canFly").forGetter(playerData -> playerData.canFly),
@@ -87,7 +77,7 @@ public class PlayerData {
     }
 
     public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
-        getOrCreate(player).ifPresent(data -> data.addTeleportHistory(new TeleportPos(dimension, pos)));
+        DataManager.getOrCreate(player).ifPresent(data -> data.addTeleportHistory(new TeleportPos(dimension, pos)));
     }
 
     public void addTeleportHistory(ServerPlayer player) {
@@ -113,24 +103,6 @@ public class PlayerData {
             locationHistory.removeLast();
             triggerUpdate();
         }
-    }
-
-    public static Optional<PlayerData> getOrCreate(MinecraftServer server, UUID playerId) {
-        if (PLAYERS.containsKey(playerId)) {
-            return Optional.of(PLAYERS.get(playerId));
-        }
-
-        // Check if the player file exists
-        return server.getProfileCache().get(playerId)
-                .map(profile -> PLAYERS.computeIfAbsent(playerId, k -> new PlayerData(playerId, profile.getName())));
-    }
-
-    public static Optional<PlayerData> getOrCreate(@Nullable Player player) {
-        if (player == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(PLAYERS.computeIfAbsent(player.getUUID(), k -> new PlayerData(player.getUUID(), player.getGameProfile().getName())));
     }
 
     public void readNbt(CompoundTag tag){

@@ -9,6 +9,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.server.level.ServerPlayer;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.util.CommandUtil;
+import net.syrupstudios.syrupessentials.util.DataManager;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 
 import java.util.Objects;
@@ -86,7 +87,7 @@ public class TeleportCommands {
         try{
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
 
-            PlayerData.getOrCreate(serverPlayer).orElseThrow().addHome(context.getInput(), serverPlayer);
+            DataManager.getOrCreate(serverPlayer).orElseThrow().addHome(context.getInput(), serverPlayer);
             CommandUtil.commandSuccess(
                     String.format("Successfully added home: %s", context.getInput()), context);
         }
@@ -99,7 +100,7 @@ public class TeleportCommands {
     private static int listHomes(CommandContext<CommandSourceStack> context) {
         try{
             CommandUtil.commandSuccess(
-                    PlayerData.getOrCreate(context.getSource().getPlayerOrException())
+                    DataManager.getOrCreate(context.getSource().getPlayerOrException())
                             .orElseThrow()
                             .getHomes()
                             .listNames(),
@@ -128,7 +129,7 @@ public class TeleportCommands {
     private static int namedHome(CommandContext<CommandSourceStack> context) {
         try {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
-            PlayerData player = PlayerData.getOrCreate(serverPlayer).orElseThrow();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
             player.addTeleportHistory(serverPlayer);
 
             if(player.getHomes().getDestinations().containsKey(context.getInput())){
