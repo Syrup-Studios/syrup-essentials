@@ -3,6 +3,8 @@ package net.syrupstudios.syrupessentials.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -11,10 +13,13 @@ import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.util.CommandUtil;
 import net.syrupstudios.syrupessentials.util.DataManager;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
+import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class TeleportCommands {
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tpa")
@@ -80,7 +85,15 @@ public class TeleportCommands {
     }
 
     private static int setDefaultHome(CommandContext<CommandSourceStack> context) {
-        return 0;
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            DataManager.getOrCreate(serverPlayer).orElseThrow().addHome("home", serverPlayer);
+            CommandUtil.commandSuccess("Successfully set home", context);
+            return 1;
+        } catch (Exception e) {
+            CommandUtil.commandFailure("Unable to Set Home", context);
+            return 0;
+        }
     }
 
     private static int setHome(CommandContext<CommandSourceStack> context) {
@@ -93,6 +106,7 @@ public class TeleportCommands {
         }
         catch (Exception e){
             CommandUtil.commandFailure("Unable to Set Home", context);
+            LOGGER.error("Error occurred while trying to set home: {}", e.toString());
         }
         return 1;
     }
@@ -115,14 +129,71 @@ public class TeleportCommands {
     }
 
     private static int delDefaultHome(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+            Map<String, TeleportPos> homes = player.getHomes().getDestinations();
+
+            if(homes.size() == 1){
+                player.getHomes().getDestinations().clear();
+                CommandUtil.commandSuccess("Successfully removed home.", context);
+                return 1;
+            }
+            CommandUtil.commandFailure("Please specify which home to delete. /delhome (name of home here)", context);
+        } catch (Exception e) {
+            CommandUtil.commandFailure("Unable to delete home", context);
+            LOGGER.error("Error deleting default home: {}", e.toString());
+        }
         return 0;
     }
 
     private static int delHome(CommandContext<CommandSourceStack> context) {
+        try {
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+            Map<String, TeleportPos> homes = player.getHomes().getDestinations();
+            String homeName = context.getArgument("home_name", String.class);
+            if(!homes.containsKey(homeName)){
+                CommandUtil.commandFailure("No home saved with name: "+homeName, context);
+                return 0;
+            }
+            player.getHomes().getDestinations().remove(homeName);
+
+            if(player.getHomes().getDestinations().containsKey(homeName)){
+                CommandUtil.commandFailure("Unable to delete home", context);
+                return 0;
+            }
+            CommandUtil.commandSuccess("Successfully removed home with name: "+homeName, context);
+            return 1;
+        } catch (Exception e){
+            CommandUtil.commandFailure("Unable to delete home", context);
+            LOGGER.error("Error occurred while deleting a player home: {}", e.toString());
+        }
         return 0;
     }
 
     private static int home(CommandContext<CommandSourceStack> context) {
+        try {
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+            Map<String, TeleportPos> homes = player.getHomes().getDestinations();
+            player.addTeleportHistory(serverPlayer);
+
+            if(homes.size() == 1){
+                teleportPlayer(homes.get(homes.keySet().iterator().next()), serverPlayer);
+                return 1;
+            }
+            if(homes.containsKey("home")){
+                teleportPlayer(homes.get("home"), serverPlayer);
+                return 1;
+            }
+            else {
+                CommandUtil.commandFailure("No default home set.", context);
+            }
+        } catch (Exception e) {
+
+            CommandUtil.commandFailure("Unable To Teleport player to desired home.", context);
+        }
         return 0;
     }
 
@@ -134,23 +205,27 @@ public class TeleportCommands {
             String homeName = context.getArgument("home_name", String.class);
 
             if(player.getHomes().getDestinations().containsKey(homeName)){
-                TeleportPos tpos = player.getHomes().getDestinations().get(homeName);
-                serverPlayer.teleportTo(
-                        Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
-                        tpos.getPos().getX(),
-                        tpos.getPos().getY(),
-                        tpos.getPos().getZ(),
-                        tpos.getYaw(),
-                        tpos.getPitch()
-                );
+                teleportPlayer(player.getHomes().getDestinations().get(homeName), serverPlayer);
+                return 1;
             }
             else {
                 CommandUtil.commandFailure(String.format("No home with name: %s", homeName), context);
             }
         } catch (Exception e) {
-            CommandUtil.commandFailure("Unable To Teleport player to desired home", context);
+            CommandUtil.commandFailure("Unable To Teleport player to desired home.", context);
         }
-        return 1;
+        return 0;
+    }
+
+    private static void teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
+        serverPlayer.teleportTo(
+                Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
+                tpos.getPos().getX(),
+                tpos.getPos().getY(),
+                tpos.getPos().getZ(),
+                tpos.getYaw(),
+                tpos.getPitch()
+        );
     }
 
     private static int tpaDeny(CommandContext<CommandSourceStack> context) {

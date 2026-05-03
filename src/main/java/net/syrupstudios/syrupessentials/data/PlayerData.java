@@ -99,8 +99,8 @@ public class PlayerData {
         this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
     }
 
-    public boolean removeHome(String name) {
-        return this.homes.removeLocation(name);
+    public void removeHome(String name) {
+        this.homes.removeLocation(name);
     }
 
     public void popLocationHistory() {

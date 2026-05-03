@@ -30,12 +30,12 @@ public class SyrupEssentials implements ModInitializer {
 				dataManager = new DataManager(server));
 
 		ServerPlayConnectionEvents.JOIN.register((phase, listener, server) ->
-					playerJoin(phase, server));
+					playerJoin(phase));
 
 		ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
 	}
 
-	private void playerJoin(ServerGamePacketListenerImpl phase, MinecraftServer server) {
+	private void playerJoin(ServerGamePacketListenerImpl phase) {
 		try {
 			dataManager.loadPlayer(phase.getPlayer().getUUID());
 		}
