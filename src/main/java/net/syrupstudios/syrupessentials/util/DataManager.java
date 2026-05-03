@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -57,7 +56,7 @@ public class DataManager {
     }
 
     public void loadPlayer(UUID playerUUID) {
-        Path path = Paths.get(PLAYER_PATH, playerUUID + ".snbt");
+        Path path = playerDirectory.toPath().resolve(playerUUID + ".snbt");
         PlayerData playerData = getOrCreate(minecraftServer,playerUUID).orElseThrow();
         if (Files.exists(path)) {
             try {
@@ -65,7 +64,7 @@ public class DataManager {
                 playerData.readNbt(NbtIo.read(playerFile));
                 PLAYERS.put(playerUUID, playerData);
             } catch (Exception e) {
-                LOGGER.error("Error while reading player data: {}", e.getMessage());
+                LOGGER.error("Error while reading player data: {}", e.toString());
             }
         }
         else {
@@ -73,7 +72,7 @@ public class DataManager {
                 Files.createFile(path);
                 PLAYERS.put(playerUUID, playerData);
             } catch (Exception e) {
-                LOGGER.error("Error while creating player data: {}", e.getMessage());
+                LOGGER.error("Error while creating player data: {}", e.toString());
             }
         }
     }
@@ -98,86 +97,6 @@ public class DataManager {
                 LOGGER.error("Error while reading world data: {}", e.getMessage());
             }
         }
-    }
-
-    public static String formatNbt(CompoundTag nbt) {
-        String snbt = nbt.toString();
-        StringBuilder formatted = new StringBuilder();
-        int indent = 0;
-        int listDepth = 0;
-        int compactDepth = 0;
-        boolean inQuote = false;
-        char lastChar = 0;
-
-        for (int i = 0; i < snbt.length(); i++) {
-            char c = snbt.charAt(i);
-
-            if (c == '"' && lastChar != '\\') {
-                inQuote = !inQuote;
-            }
-
-            if (!inQuote) {
-                if (compactDepth > 0) {
-                    if (c == '}' || c == ']') {
-                        compactDepth--;
-                        formatted.append(c);
-                    } else if (c == '{' || c == '[') {
-                        compactDepth++;
-                        formatted.append(c);
-                    } else if (c == ',') {
-                        formatted.append(", ");
-                    } else if (c == ':') {
-                        formatted.append(": ");
-                    } else {
-                        formatted.append(c);
-                    }
-                }
-                else {
-                    if (c == '{') {
-                        if (listDepth > 0) {
-                            compactDepth = 1;
-                            formatted.append(c);
-                        } else {
-                            formatted.append("{\n");
-                            indent++;
-                            appendIndent(formatted, indent);
-                        }
-                    } else if (c == '[') {
-                        if (i + 2 < snbt.length() && snbt.charAt(i + 2) == ';') {
-                            compactDepth = 1;
-                            formatted.append(c);
-                        } else {
-                            formatted.append("[\n");
-                            indent++;
-                            listDepth++;
-                            appendIndent(formatted, indent);
-                        }
-                    } else if (c == '}') {
-                        formatted.append("\n");
-                        indent--;
-                        appendIndent(formatted, indent);
-                        formatted.append(c);
-                    } else if (c == ']') {
-                        formatted.append("\n");
-                        indent--;
-                        listDepth--;
-                        appendIndent(formatted, indent);
-                        formatted.append(c);
-                    } else if (c == ',') {
-                        formatted.append(",\n");
-                        appendIndent(formatted, indent);
-                    } else if (c == ':') {
-                        formatted.append(": ");
-                    } else {
-                        formatted.append(c);
-                    }
-                }
-            } else {
-                formatted.append(c);
-            }
-            lastChar = c;
-        }
-        return formatted.toString();
     }
 
     private static void appendIndent(StringBuilder sb, int indent) {

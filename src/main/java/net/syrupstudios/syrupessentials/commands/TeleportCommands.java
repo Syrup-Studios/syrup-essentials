@@ -86,10 +86,10 @@ public class TeleportCommands {
     private static int setHome(CommandContext<CommandSourceStack> context) {
         try{
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
-
-            DataManager.getOrCreate(serverPlayer).orElseThrow().addHome(context.getInput(), serverPlayer);
+            String homeName = context.getArgument("home_name", String.class);
+            DataManager.getOrCreate(serverPlayer).orElseThrow().addHome(homeName, serverPlayer);
             CommandUtil.commandSuccess(
-                    String.format("Successfully added home: %s", context.getInput()), context);
+                    String.format("Successfully added home: %s", homeName), context);
         }
         catch (Exception e){
             CommandUtil.commandFailure("Unable to Set Home", context);
@@ -131,20 +131,21 @@ public class TeleportCommands {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
             player.addTeleportHistory(serverPlayer);
+            String homeName = context.getArgument("home_name", String.class);
 
-            if(player.getHomes().getDestinations().containsKey(context.getInput())){
-                TeleportPos tpos = player.getHomes().getDestinations().get(context.getInput());
+            if(player.getHomes().getDestinations().containsKey(homeName)){
+                TeleportPos tpos = player.getHomes().getDestinations().get(homeName);
                 serverPlayer.teleportTo(
                         Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
                         tpos.getPos().getX(),
                         tpos.getPos().getY(),
                         tpos.getPos().getZ(),
-                        0,
-                        0
+                        tpos.getYaw(),
+                        tpos.getPitch()
                 );
             }
             else {
-                CommandUtil.commandFailure(String.format("No home with name: %s", context.getInput()), context);
+                CommandUtil.commandFailure(String.format("No home with name: %s", homeName), context);
             }
         } catch (Exception e) {
             CommandUtil.commandFailure("Unable To Teleport player to desired home", context);

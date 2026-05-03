@@ -41,7 +41,7 @@ public class PlayerData {
         this.playerName = playerName;
         this.update = false;
         this.lastLocation = null;
-        this.homes = new Homes(this);
+        this.homes = new Homes();
         this.locationHistory = new LinkedList<>();
         this.isMuted = false;
         this.canFly = false;
@@ -77,7 +77,8 @@ public class PlayerData {
     }
 
     public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
-        DataManager.getOrCreate(player).ifPresent(data -> data.addTeleportHistory(new TeleportPos(dimension, pos)));
+        DataManager.getOrCreate(player).ifPresent(data -> data.addTeleportHistory(
+                new TeleportPos(dimension, pos, player.getXRot(), player.getYRot())));
     }
 
     public void addTeleportHistory(ServerPlayer player) {
@@ -95,7 +96,11 @@ public class PlayerData {
     }
 
     public void addHome(String name, ServerPlayer serverPlayer){
-        this.homes.addHome(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition()));
+        this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
+    }
+
+    public boolean removeHome(String name) {
+        return this.homes.removeLocation(name);
     }
 
     public void popLocationHistory() {

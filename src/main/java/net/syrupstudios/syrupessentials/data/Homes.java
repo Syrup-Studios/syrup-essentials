@@ -12,32 +12,22 @@ import java.util.Map;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Homes extends Locations {
-    private final PlayerData playerData;
+    private boolean requireUpdate = false;
 
-    public Homes(PlayerData playerData, Map<String, TeleportPos> destinations) {
-        super(destinations);
-        this.playerData = playerData;
-    }
-    public Homes(PlayerData playerData){
+    public Homes(){
         super(new HashMap<>());
-        this.playerData = playerData;
     }
 
-    public void addHome(String name, TeleportPos pos) {
-        this.addLocation(name, pos);
-    }
-
-    public boolean removeHome(String name) {
-        return this.removeLocation(name);
+    public Homes(Map<String, TeleportPos> destinations) {
+        super(destinations);
     }
 
     @Override
     protected void update() {
-        playerData.triggerUpdate();
+        this.requireUpdate = true;
     }
 
     public static final Codec<Homes> CODEC = RecordCodecBuilder.create(builder -> builder.group(
-            PlayerData.CODEC.fieldOf("player").forGetter(homes -> homes.playerData),
             Codec.unboundedMap(Codec.STRING, TeleportPos.CODEC)
                     .fieldOf("destinations")
                     .forGetter(Locations::getDestinations)
