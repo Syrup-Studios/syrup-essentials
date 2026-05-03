@@ -32,12 +32,12 @@ public class SyrupEssentials implements ModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((phase, listener, server) ->
 					playerJoin(phase, server));
 
-		ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
+		//ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
 	}
 
 	private void playerJoin(ServerGamePacketListenerImpl phase, MinecraftServer server) {
 		try {
-			dataManager.loadPlayer(PlayerData.getOrCreate(server, phase.player.getUUID()).orElseThrow());
+			dataManager.loadPlayer(phase.getPlayer().getUUID());
 		}
 		catch (Exception e) {
 			LOGGER.error("Error Loading Player: {}", phase.getPlayer().getDisplayName().getString());

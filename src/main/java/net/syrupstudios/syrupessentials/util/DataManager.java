@@ -10,10 +10,13 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.UUID;
 
 public class DataManager {
-    private static final String MOD_PATH = "syurp_essential_data";
+    private static final String MOD_PATH = "syrup_essential_data";
     private static final String WORLD_PATH = "world_data";
     private static final String DATA_FILE = "data.snbt";
     private static final String PLAYER_PATH = "player_data";
@@ -22,6 +25,8 @@ public class DataManager {
     private final File playerDirectory;
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
+    private PlayerData playerData;
+    private WorldData worldData;
     @Nullable
     private static DataManager INSTANCE;
 
@@ -30,6 +35,8 @@ public class DataManager {
         this.worldDirectory = dataDirectory.toPath().resolve(WORLD_PATH).toFile();
         this.playerDirectory = dataDirectory.toPath().resolve(PLAYER_PATH).toFile();
         this.minecraftServer = server;
+        this.playerData = new PlayerData();
+        this.worldData = new WorldData();
         
         mkDirsIfNotExisting(dataDirectory);
         mkDirsIfNotExisting(worldDirectory);
@@ -46,14 +53,22 @@ public class DataManager {
         }
     }
 
-    public void loadPlayer(PlayerData playerData) {
-        File playerFile = playerDirectory.toPath().resolve(playerData.getPlayerId()+".snbt").toFile();
+    public void loadPlayer(UUID playerUUID) {
 
-        if (playerFile.exists()) {
+        if (Files.exists(Paths.get(PLAYER_PATH, playerUUID + ".snbt"))) {
             try {
+                this.playerData = PlayerData.getOrCreate(minecraftServer,playerUUID).orElseThrow();
+                File playerFile = playerDirectory.toPath().resolve(playerUUID+".snbt").toFile();
                 playerData.readNbt(NbtIo.read(playerFile));
             } catch (Exception e) {
                 LOGGER.error("Error while reading player data: {}", e.getMessage());
+            }
+        }
+        else {
+            try {
+                Files.createFile(Paths.get(PLAYER_PATH, playerUUID + ".snbt"));
+            } catch (Exception e) {
+                LOGGER.error("Error while creating player data: {}", e.getMessage());
             }
         }
     }

@@ -39,6 +39,11 @@ public class PlayerData {
     private boolean godmode;
     private String nickname;
 
+    public PlayerData(){
+        this.playerId = null;
+        this.playerName = null;
+    }
+
     public PlayerData(UUID playerId, String playerName) {
         this.playerId = playerId;
         this.playerName = playerName;
