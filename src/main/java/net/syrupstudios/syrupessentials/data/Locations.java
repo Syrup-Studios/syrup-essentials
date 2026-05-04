@@ -19,7 +19,7 @@ public abstract class Locations {
     }
 
     public boolean removeLocation(String name){
-        if(destinations.remove(name.toLowerCase()) == null){
+        if(destinations.remove(name) == null){
             return false;
         }
         update();

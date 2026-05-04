@@ -3,15 +3,22 @@ package net.syrupstudios.syrupessentials;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.syrupstudios.syrupessentials.commands.TeleportCommands;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.util.DataManager;
+import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 public class SyrupEssentials implements ModInitializer {
 	public static final String MOD_ID = "syrup-essentials";
@@ -29,10 +36,25 @@ public class SyrupEssentials implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register((server) ->
 				dataManager = new DataManager(server));
 
+		ServerTickEvents.START_SERVER_TICK.register(this::tick);
+
 		ServerPlayConnectionEvents.JOIN.register((phase, listener, server) ->
 					playerJoin(phase));
 
+		ServerLivingEntityEvents.AFTER_DEATH.register(((livingEntity, damageSource) -> {
+			if (livingEntity instanceof ServerPlayer player) {
+				saveDeathLocation(player);
+			}
+		}));
+
 		ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
+	}
+
+	private void saveDeathLocation(ServerPlayer player) {
+		PlayerData playerData = DataManager.getOrCreate(player).orElseThrow();
+		TeleportPos deathLoc = new TeleportPos(player.level(), player.blockPosition(), player.getXRot(), player.getYRot());
+		playerData.addTeleportHistory(deathLoc);
+		playerData.setLastLocation(deathLoc);
 	}
 
 	private void playerJoin(ServerGamePacketListenerImpl phase) {
@@ -51,5 +73,20 @@ public class SyrupEssentials implements ModInitializer {
 		catch (Exception e) {
 			LOGGER.error("Error Saving Player: {}", phase.getPlayer().getDisplayName().getString());
 		}
+	}
+
+	public static void teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
+		serverPlayer.teleportTo(
+				Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
+				tpos.getPos().getX(),
+				tpos.getPos().getY(),
+				tpos.getPos().getZ(),
+				tpos.getYaw(),
+				tpos.getPitch()
+		);
+	}
+
+	private void tick(MinecraftServer minecraftServer) {
+
 	}
 }

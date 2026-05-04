@@ -6,7 +6,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Data;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.slf4j.Logger;
 
@@ -16,6 +18,7 @@ import java.util.Optional;
 public class WorldData {
     private static final Logger LOGGER = LogUtils.getLogger();
     private Warps warps;
+    private final ResourceKey<Level> dimensionId;
 
     public WorldData(){
         this.warps = new Warps(this);
@@ -33,6 +36,12 @@ public class WorldData {
                 .resultOrPartial(LOGGER::error);
 
         worldData.ifPresent(data -> warps = data.getWarps());
+    }
+
+    public CompoundTag writeNbt() {
+        CompoundTag tag = new CompoundTag();
+        tag.put("worldData",CODEC.encodeStart(NbtOps.INSTANCE, this).resultOrPartial(LOGGER::error).orElse(null));
+        return tag;
     }
 
     public void createWarp(String name, ServerPlayer serverPlayer) {

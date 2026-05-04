@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import java.util.Map;
 import java.util.Objects;
 
+import static net.syrupstudios.syrupessentials.SyrupEssentials.teleportPlayer;
+
 public class TeleportCommands {
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -65,7 +67,33 @@ public class TeleportCommands {
                         .executes(TeleportCommands::delWarp)));
 
         dispatcher.register(Commands.literal("listwarps")
-                    .executes(TeleportCommands::delWarp));
+                .executes(TeleportCommands::delWarp));
+
+        dispatcher.register(Commands.literal("back")
+                .executes(TeleportCommands::back));
+    }
+
+    private static int back(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+            TeleportPos lastLocation = player.getLastLocation();
+
+            context.getSource().getServer();
+
+            if(lastLocation != null){
+                player.popLocationHistory();
+                teleportPlayer(lastLocation, serverPlayer);
+                CommandUtil.commandSuccess("Returned to last location", context);
+            }
+            else {
+
+            }
+
+        } catch (Exception e) {
+
+        }
+        return 0;
     }
 
     private static int delWarp(CommandContext<CommandSourceStack> context) {
@@ -157,7 +185,7 @@ public class TeleportCommands {
                 CommandUtil.commandFailure("No home saved with name: "+homeName, context);
                 return 0;
             }
-            player.getHomes().getDestinations().remove(homeName);
+            player.getHomes().removeLocation(homeName);
 
             if(player.getHomes().getDestinations().containsKey(homeName)){
                 CommandUtil.commandFailure("Unable to delete home", context);
@@ -215,17 +243,6 @@ public class TeleportCommands {
             CommandUtil.commandFailure("Unable To Teleport player to desired home.", context);
         }
         return 0;
-    }
-
-    private static void teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
-        serverPlayer.teleportTo(
-                Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
-                tpos.getPos().getX(),
-                tpos.getPos().getY(),
-                tpos.getPos().getZ(),
-                tpos.getYaw(),
-                tpos.getPitch()
-        );
     }
 
     private static int tpaDeny(CommandContext<CommandSourceStack> context) {

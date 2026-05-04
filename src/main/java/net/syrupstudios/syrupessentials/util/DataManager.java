@@ -1,7 +1,6 @@
 package net.syrupstudios.syrupessentials.util;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
@@ -30,6 +29,7 @@ public class DataManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
     private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
+    private static final Map<UUID, TeleportPos> PENDING_TELEPORTS = new HashMap<>();
     private WorldData worldData;
     @Nullable
     private static DataManager INSTANCE;
@@ -97,10 +97,6 @@ public class DataManager {
                 LOGGER.error("Error while reading world data: {}", e.getMessage());
             }
         }
-    }
-
-    private static void appendIndent(StringBuilder sb, int indent) {
-        sb.append("  ".repeat(Math.max(0, indent)));
     }
 
     public static Optional<PlayerData> getOrCreate(MinecraftServer server, UUID playerId) {
