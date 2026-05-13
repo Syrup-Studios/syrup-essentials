@@ -18,7 +18,7 @@ import java.util.Optional;
 public class WorldData {
     private static final Logger LOGGER = LogUtils.getLogger();
     private Warps warps;
-    private final ResourceKey<Level> dimensionId;
+    //private final ResourceKey<Level> dimensionId;
 
     public WorldData(){
         this.warps = new Warps(this);

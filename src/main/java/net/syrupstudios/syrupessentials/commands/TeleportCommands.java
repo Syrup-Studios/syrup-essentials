@@ -185,7 +185,7 @@ public class TeleportCommands {
                 CommandUtil.commandFailure("No home saved with name: "+homeName, context);
                 return 0;
             }
-            player.getHomes().removeLocation(homeName);
+            player.removeHome(homeName);
 
             if(player.getHomes().getDestinations().containsKey(homeName)){
                 CommandUtil.commandFailure("Unable to delete home", context);

@@ -76,6 +76,10 @@ public class PlayerData {
         this.update = true;
     }
 
+    public void clearUpdate(){
+        this.update = false;
+    }
+
     public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
         DataManager.getOrCreate(player).ifPresent(data -> data.addTeleportHistory(
                 new TeleportPos(dimension, pos, player.getXRot(), player.getYRot())));
@@ -97,10 +101,12 @@ public class PlayerData {
 
     public void addHome(String name, ServerPlayer serverPlayer){
         this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
+        triggerUpdate();
     }
 
     public void removeHome(String name) {
         this.homes.removeLocation(name);
+        triggerUpdate();
     }
 
     public void popLocationHistory() {
@@ -128,7 +134,7 @@ public class PlayerData {
     public CompoundTag writeNbt() {
         CompoundTag tag = new CompoundTag();
         tag.put("playerData",CODEC.encodeStart(NbtOps.INSTANCE, this).resultOrPartial(LOGGER::error).orElse(null));
+        clearUpdate();
         return tag;
     }
-
 }
