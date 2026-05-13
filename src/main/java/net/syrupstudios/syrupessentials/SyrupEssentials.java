@@ -22,6 +22,7 @@ import java.util.Objects;
 public class SyrupEssentials implements ModInitializer {
 	public static final String MOD_ID = "syrup-essentials";
 	private DataManager dataManager;
+	private int ticks = 0;
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -74,6 +75,8 @@ public class SyrupEssentials implements ModInitializer {
 	}
 
 	public static void teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
+		PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+		player.addTeleportHistory(serverPlayer);
 		serverPlayer.teleportTo(
 				Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
 				tpos.getPos().getX(),
@@ -85,6 +88,10 @@ public class SyrupEssentials implements ModInitializer {
 	}
 
 	private void tick(MinecraftServer minecraftServer) {
-
+		ticks++;
+		if(ticks == 600){
+			dataManager.savePlayers(minecraftServer);
+			ticks = 0;
+		}
 	}
 }

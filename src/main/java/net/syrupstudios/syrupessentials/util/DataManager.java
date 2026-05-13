@@ -3,6 +3,7 @@ package net.syrupstudios.syrupessentials.util;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
@@ -81,6 +82,7 @@ public class DataManager {
     }
 
     public void savePlayer(PlayerData playerData) {
+        playerData.checkForHomeUpdates();
         if(playerData.isUpdate()){
             Path playerFile = playerDirectory.toPath().resolve(playerData.getPlayerId()+".snbt");
             try{
@@ -90,6 +92,18 @@ public class DataManager {
                 LOGGER.error(e.getMessage());
             }
         }
+    }
+
+    public void savePlayers(MinecraftServer server){
+        LOGGER.info("Saving all player data..");
+        server.getPlayerList().getPlayers().stream().map(ServerPlayer::getUUID).forEach(
+                UUID -> {
+                    if(PLAYERS.containsKey(UUID)){
+                        savePlayer(PLAYERS.get(UUID));
+                    }
+                }
+        );
+        LOGGER.info("All player data saved.");
     }
 
     private String formatString(String snbt) {

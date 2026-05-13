@@ -60,6 +60,7 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("setwarp")
                 .then(Commands.argument("warp_name", StringArgumentType.string())
+                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(TeleportCommands::setWarp)));
 
         dispatcher.register(Commands.literal("delwarp")
@@ -101,6 +102,7 @@ public class TeleportCommands {
     }
 
     private static int setWarp(CommandContext<CommandSourceStack> context) {
+        context.getSource()
         return 0;
     }
 
@@ -185,7 +187,7 @@ public class TeleportCommands {
                 CommandUtil.commandFailure("No home saved with name: "+homeName, context);
                 return 0;
             }
-            player.getHomes().getDestinations().remove(homeName);
+            player.removeHome(homeName);
 
             if(player.getHomes().getDestinations().containsKey(homeName)){
                 CommandUtil.commandFailure("Unable to delete home", context);
@@ -206,7 +208,7 @@ public class TeleportCommands {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
             Map<String, TeleportPos> homes = player.getHomes().getDestinations();
-            player.addTeleportHistory(serverPlayer);
+
 
             if(homes.size() == 1){
                 teleportPlayer(homes.get(homes.keySet().iterator().next()), serverPlayer);

@@ -80,6 +80,10 @@ public class PlayerData {
         this.update = false;
     }
 
+    public void checkForHomeUpdates() {
+        this.update = homes.requiresUpdate();
+    }
+
     public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
         DataManager.getOrCreate(player).ifPresent(data -> data.addTeleportHistory(
                 new TeleportPos(dimension, pos, player.getXRot(), player.getYRot())));
@@ -101,12 +105,10 @@ public class PlayerData {
 
     public void addHome(String name, ServerPlayer serverPlayer){
         this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
-        triggerUpdate();
     }
 
     public void removeHome(String name) {
         this.homes.removeLocation(name);
-        triggerUpdate();
     }
 
     public void popLocationHistory() {
