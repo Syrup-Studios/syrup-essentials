@@ -19,7 +19,7 @@ public class Homes extends Locations {
     }
 
     public Homes(Map<String, TeleportPos> destinations) {
-        super(destinations);
+        super(new HashMap<>(destinations));
     }
 
     @Override

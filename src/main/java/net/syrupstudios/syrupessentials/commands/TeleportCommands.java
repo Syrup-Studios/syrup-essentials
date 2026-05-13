@@ -185,17 +185,18 @@ public class TeleportCommands {
                 CommandUtil.commandFailure("No home saved with name: "+homeName, context);
                 return 0;
             }
-            player.removeHome(homeName);
+            player.getHomes().getDestinations().remove(homeName);
 
             if(player.getHomes().getDestinations().containsKey(homeName)){
                 CommandUtil.commandFailure("Unable to delete home", context);
                 return 0;
             }
             CommandUtil.commandSuccess("Successfully removed home with name: "+homeName, context);
+            player.triggerUpdate();
             return 1;
         } catch (Exception e){
             CommandUtil.commandFailure("Unable to delete home", context);
-            LOGGER.error("Error occurred while deleting a player home: {}", e.toString());
+            LOGGER.error("Error occurred while deleting a player home: ", e);
         }
         return 0;
     }

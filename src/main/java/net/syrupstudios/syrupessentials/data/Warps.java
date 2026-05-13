@@ -19,7 +19,7 @@ public class Warps extends Locations {
     }
 
     public Warps(WorldData worldData, Map<String, TeleportPos> destinations){
-        super(destinations);
+        super(new HashMap<>(destinations));
         this.worldData = worldData;
     }
 

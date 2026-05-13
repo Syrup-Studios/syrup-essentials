@@ -4,13 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 
+import java.util.HashMap;
 import java.util.Map;
 
 
 @Data
 @AllArgsConstructor
 public abstract class Locations {
-    private Map<String, TeleportPos> destinations;
+    private HashMap<String, TeleportPos> destinations;
 
     public void addLocation(String name, TeleportPos teleportPos){
         name = name.toLowerCase();

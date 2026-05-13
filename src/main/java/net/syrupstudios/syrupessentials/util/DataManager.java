@@ -1,7 +1,6 @@
 package net.syrupstudios.syrupessentials.util;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.nbt.StringTagVisitor;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
@@ -85,11 +84,8 @@ public class DataManager {
         if(playerData.isUpdate()){
             Path playerFile = playerDirectory.toPath().resolve(playerData.getPlayerId()+".snbt");
             try{
-                String nbt = playerData.writeNbt().toString();
-                System.out.println(nbt);
-                nbt = formatString(nbt);
-                System.out.println(nbt);
-                Files.writeString(playerFile, nbt);
+                Files.writeString(playerFile, formatString(playerData.writeNbt().toString()));
+                System.out.println("Saved Player File for "+playerData.getPlayerName());
             } catch (Exception e) {
                 LOGGER.error(e.getMessage());
             }
@@ -102,12 +98,9 @@ public class DataManager {
         boolean inQuote = false;
         boolean inTypedArray = false;
         char last = 0;
-
         for (int i = 0; i < snbt.length(); i++) {
             char c = snbt.charAt(i);
-
             if (c == '"' && last != '\\') inQuote = !inQuote;
-
             if (inQuote) {
                 result += c;
             } else if (inTypedArray) {
@@ -153,10 +146,8 @@ public class DataManager {
                     default -> result += c;
                 }
             }
-
             last = c;
         }
-
         return result;
     }
 
