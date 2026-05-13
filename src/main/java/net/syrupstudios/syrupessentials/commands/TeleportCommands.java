@@ -102,7 +102,7 @@ public class TeleportCommands {
     }
 
     private static int setWarp(CommandContext<CommandSourceStack> context) {
-        context.getSource()
+        context.getSource();
         return 0;
     }
 
