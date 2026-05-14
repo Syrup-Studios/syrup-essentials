@@ -257,6 +257,13 @@ public class TeleportCommands {
     }
 
     private static int tpa(CommandContext<CommandSourceStack> context) {
-        return 1;
+        try {
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+            player.addTeleportHistory(serverPlayer);
+        } catch (Exception e) {
+            CommandUtil.commandFailure("Unable To Process TPA Request.", context);
+        }
+        return 0;
     }
 }

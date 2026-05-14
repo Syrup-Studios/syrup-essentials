@@ -22,7 +22,7 @@ import java.util.Objects;
 public class SyrupEssentials implements ModInitializer {
 	public static final String MOD_ID = "syrup-essentials";
 	private DataManager dataManager;
-	private int ticks = 0;
+	private long currentTick = 0;
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -88,10 +88,6 @@ public class SyrupEssentials implements ModInitializer {
 	}
 
 	private void tick(MinecraftServer minecraftServer) {
-		ticks++;
-		if(ticks == 600){
-			dataManager.savePlayers(minecraftServer);
-			ticks = 0;
-		}
+		dataManager.onServerTick();
 	}
 }

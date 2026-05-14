@@ -32,10 +32,12 @@ public class DataManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
     private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
-    private static final Map<UUID, TeleportPos> PENDING_TELEPORTS = new HashMap<>();
+    private static final HashMap<UUID, TeleportPos> APPROVED_TELEPORTS = new HashMap<>();
+    private static final HashMap<UUID, TeleportRequest> TELEPORT_APPROVAL_REQUESTS = new HashMap<>();
     private WorldData worldData;
     @Nullable
     private static DataManager INSTANCE;
+    private static long currentTick;
 
     public DataManager(MinecraftServer server) {
         this.dataDirectory = server.getServerDirectory().toPath().resolve(MOD_PATH).toFile();
@@ -183,4 +185,68 @@ public class DataManager {
         return Optional.of(PLAYERS.computeIfAbsent(player.getUUID(), k -> new PlayerData(player.getUUID(), player.getGameProfile().getName())));
     }
 
+    public static int teleportRequest(ServerPlayer serverPlayer, MinecraftServer server, String destinationPlayerName){
+        ServerPlayer target = server.getPlayerList().getPlayerByName(destinationPlayerName);
+        if (target!=null) {
+            TELEPORT_APPROVAL_REQUESTS.put(
+                    serverPlayer.getUUID(),
+                    new TeleportRequest(
+                            new TeleportPos(target.level(), target.blockPosition(), target.getXRot(), target.getYRot()),
+                            target.getUUID(),
+                            serverPlayer,
+                            currentTick + 600 //replace with config timeout eventually
+                    ));
+            return 1;
+        }
+        return -1;
+    }
+
+    public static int removeTeleportRequest(ServerPlayer serverPlayer){
+        TELEPORT_APPROVAL_REQUESTS.remove(serverPlayer.getUUID());
+        return TELEPORT_APPROVAL_REQUESTS.containsKey(serverPlayer.getUUID()) ? 0 : 1;
+    }
+
+    public static int approveTeleportRequest(UUID recieverUUID){
+        Optional<TeleportRequest> possibleTeleportRequest =
+                TELEPORT_APPROVAL_REQUESTS.values()
+                        .stream()
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(recieverUUID))
+                        .findFirst();
+        if(possibleTeleportRequest.isPresent()){
+            TeleportRequest request = possibleTeleportRequest.get();
+            APPROVED_TELEPORTS.put(
+                    request.getSenderPlayer().getUUID(),
+                    request.getTeleportPos()
+            );
+            TELEPORT_APPROVAL_REQUESTS.remove(recieverUUID);
+            return 1;
+        }
+        return 0;
+    }
+
+    public static int denyTeleportRequest(UUID recieverUUID){
+        Optional<TeleportRequest> possibleTeleportRequest =
+                TELEPORT_APPROVAL_REQUESTS.values()
+                        .stream()
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(recieverUUID))
+                        .findFirst();
+        if(possibleTeleportRequest.isPresent()){
+            TELEPORT_APPROVAL_REQUESTS.remove(recieverUUID);
+            return 1;
+        }
+        return 0;
+    }
+
+    public static boolean tpStillPending(ServerPlayer serverPlayer){
+        return TELEPORT_APPROVAL_REQUESTS.containsKey(serverPlayer.getUUID());
+    }
+
+    public void onServerTick(){
+        currentTick++;
+        if(currentTick % 600 == 0){
+            savePlayers(minecraftServer);
+        }
+        TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
+                entry -> currentTick >= entry.getValue().getExpiresAtTick());
+    }
 }
