@@ -2,9 +2,11 @@ package net.syrupstudios.syrupessentials.util;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.syrupstudios.syrupessentials.SyrupEssentials;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +34,7 @@ public class DataManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
     private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
-    private static final HashMap<UUID, TeleportPos> APPROVED_TELEPORTS = new HashMap<>();
+    private static final HashMap<UUID, TeleportRequest> APPROVED_TELEPORTS = new HashMap<>();
     private static final HashMap<UUID, TeleportRequest> TELEPORT_APPROVAL_REQUESTS = new HashMap<>();
     private WorldData worldData;
     @Nullable
@@ -206,39 +208,42 @@ public class DataManager {
         return TELEPORT_APPROVAL_REQUESTS.containsKey(serverPlayer.getUUID()) ? 0 : 1;
     }
 
-    public static int approveTeleportRequest(UUID recieverUUID){
+    public static int approveTeleportRequest(ServerPlayer receiver){
         Optional<TeleportRequest> possibleTeleportRequest =
                 TELEPORT_APPROVAL_REQUESTS.values()
                         .stream()
-                        .filter(tr -> tr.getReceiverPlayerUUID().equals(recieverUUID))
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
         if(possibleTeleportRequest.isPresent()){
+            possibleTeleportRequest.get().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Approved, Teleporting.."));
+            receiver.sendSystemMessage(
+                    Component.literal(
+                            String.format("Teleport Request Approved, Teleporting %s to you..", possibleTeleportRequest.get().getSenderPlayer().getDisplayName())));
             TeleportRequest request = possibleTeleportRequest.get();
             APPROVED_TELEPORTS.put(
                     request.getSenderPlayer().getUUID(),
-                    request.getTeleportPos()
+                    request
             );
-            TELEPORT_APPROVAL_REQUESTS.remove(recieverUUID);
+            TELEPORT_APPROVAL_REQUESTS.remove(receiver.getUUID());
             return 1;
         }
         return 0;
     }
 
-    public static int denyTeleportRequest(UUID recieverUUID){
+    public static int denyTeleportRequest(ServerPlayer receiver){
         Optional<TeleportRequest> possibleTeleportRequest =
                 TELEPORT_APPROVAL_REQUESTS.values()
                         .stream()
-                        .filter(tr -> tr.getReceiverPlayerUUID().equals(recieverUUID))
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
         if(possibleTeleportRequest.isPresent()){
-            TELEPORT_APPROVAL_REQUESTS.remove(recieverUUID);
+            possibleTeleportRequest.get().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Denied."));
+            receiver.sendSystemMessage(Component.literal("Teleport Request Denied."));
+            TELEPORT_APPROVAL_REQUESTS.remove(receiver.getUUID());
             return 1;
         }
+        receiver.sendSystemMessage(Component.literal("No currently pending teleports found."));
         return 0;
-    }
-
-    public static boolean tpStillPending(ServerPlayer serverPlayer){
-        return TELEPORT_APPROVAL_REQUESTS.containsKey(serverPlayer.getUUID());
     }
 
     public void onServerTick(){
@@ -248,5 +253,6 @@ public class DataManager {
         }
         TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
                 entry -> currentTick >= entry.getValue().getExpiresAtTick());
+        APPROVED_TELEPORTS.forEach((key, value) -> SyrupEssentials.teleportPlayer(value.getTeleportPos(), value.getSenderPlayer()));
     }
 }

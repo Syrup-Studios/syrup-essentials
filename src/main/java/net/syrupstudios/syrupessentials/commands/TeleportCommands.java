@@ -25,7 +25,7 @@ public class TeleportCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tpa")
-                .then(Commands.argument("player", EntityArgument.player())
+                .then(Commands.argument("player_name", EntityArgument.player())
                         .executes(TeleportCommands::tpa)));
 
         dispatcher.register(Commands.literal("tpaccept")
@@ -249,11 +249,11 @@ public class TeleportCommands {
     }
 
     private static int tpaDeny(CommandContext<CommandSourceStack> context) {
-        return 0;
+        return DataManager.denyTeleportRequest(context.getSource().getPlayer());
     }
 
     private static int tpaAccept(CommandContext<CommandSourceStack> context) {
-        return 0;
+        return DataManager.approveTeleportRequest(context.getSource().getPlayer());
     }
 
     private static int tpa(CommandContext<CommandSourceStack> context) {
@@ -261,6 +261,18 @@ public class TeleportCommands {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
             player.addTeleportHistory(serverPlayer);
+            Integer result = DataManager.teleportRequest(
+                    serverPlayer,
+                    context.getSource().getServer(),
+                    context.getArgument("player_name", String.class)
+            );
+            if(result.equals(1)){
+                CommandUtil.commandSuccess("Sending TPA Request..", context);
+            }
+            if(result.equals(0)){
+                CommandUtil.commandFailure("Unable to Send Teleport Request", context);
+            }
+            return result;
         } catch (Exception e) {
             CommandUtil.commandFailure("Unable To Process TPA Request.", context);
         }
