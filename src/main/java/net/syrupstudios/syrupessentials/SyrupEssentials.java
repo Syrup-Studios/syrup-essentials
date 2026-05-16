@@ -74,17 +74,18 @@ public class SyrupEssentials implements ModInitializer {
 		}
 	}
 
-	public static void teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
+	public static boolean teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
 		PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
 		player.addTeleportHistory(serverPlayer);
 		serverPlayer.teleportTo(
 				Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
-				tpos.getPos().getX(),
+				tpos.getPos().getX()+0.5,
 				tpos.getPos().getY(),
-				tpos.getPos().getZ(),
+				tpos.getPos().getZ()+0.5,
 				tpos.getYaw(),
 				tpos.getPitch()
 		);
+		return true;
 	}
 
 	private void tick(MinecraftServer minecraftServer) {

@@ -218,7 +218,7 @@ public class DataManager {
             possibleTeleportRequest.get().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Approved, Teleporting.."));
             receiver.sendSystemMessage(
                     Component.literal(
-                            String.format("Teleport Request Approved, Teleporting %s to you..", possibleTeleportRequest.get().getSenderPlayer().getDisplayName())));
+                            String.format("Teleport Request Approved, Teleporting %s to you..", possibleTeleportRequest.get().getSenderPlayer().getDisplayName().getString())));
             TeleportRequest request = possibleTeleportRequest.get();
             APPROVED_TELEPORTS.put(
                     request.getSenderPlayer().getUUID(),
@@ -253,6 +253,7 @@ public class DataManager {
         }
         TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
                 entry -> currentTick >= entry.getValue().getExpiresAtTick());
-        APPROVED_TELEPORTS.forEach((key, value) -> SyrupEssentials.teleportPlayer(value.getTeleportPos(), value.getSenderPlayer()));
+        APPROVED_TELEPORTS.entrySet().removeIf(entry ->
+                SyrupEssentials.teleportPlayer(entry.getValue().getTeleportPos(), entry.getValue().getSenderPlayer()));
     }
 }
