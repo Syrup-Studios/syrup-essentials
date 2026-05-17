@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,8 +36,6 @@ public class DataManager {
     private static final HashMap<UUID, TeleportRequest> APPROVED_TELEPORTS = new HashMap<>();
     private static final HashMap<UUID, TeleportRequest> TELEPORT_APPROVAL_REQUESTS = new HashMap<>();
     private WorldData worldData;
-    @Nullable
-    private static DataManager INSTANCE;
     private static long currentTick;
 
     public DataManager(MinecraftServer server) {
@@ -52,10 +49,6 @@ public class DataManager {
         mkDirsIfNotExisting(worldDirectory);
         mkDirsIfNotExisting(playerDirectory);
         mkDirsIfNotExisting(configDirectory);
-    }
-
-    public static DataManager getInstance(){
-        return Objects.requireNonNull(INSTANCE);
     }
 
     private void mkDirsIfNotExisting(File file) {

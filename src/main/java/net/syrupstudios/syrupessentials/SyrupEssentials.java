@@ -22,7 +22,6 @@ import java.util.Objects;
 public class SyrupEssentials implements ModInitializer {
 	public static final String MOD_ID = "syrup-essentials";
 	private DataManager dataManager;
-	private long currentTick = 0;
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 

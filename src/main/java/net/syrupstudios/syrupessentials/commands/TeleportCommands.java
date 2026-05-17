@@ -3,6 +3,8 @@ package net.syrupstudios.syrupessentials.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -16,6 +18,7 @@ import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static net.syrupstudios.syrupessentials.SyrupEssentials.teleportPlayer;
 
@@ -35,6 +38,7 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("home")
                 .then(Commands.argument("home_name", StringArgumentType.string())
+                        .suggests(TeleportCommands::suggestHomes)
                         .executes(TeleportCommands::namedHome))
                 .executes(TeleportCommands::home));
 
@@ -71,6 +75,20 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("back")
                 .executes(TeleportCommands::back));
+    }
+
+    private static CompletableFuture<Suggestions> suggestHomes(
+            CommandContext<CommandSourceStack> context,
+            SuggestionsBuilder suggestionsBuilder
+    ) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+            player.getHomes().getDestinations().forEach((key, value) -> suggestionsBuilder.suggest(key));
+        } catch (Exception e) {
+            LOGGER.error("Error gathering home suggestion",e);
+        }
+        return suggestionsBuilder.buildFuture();
     }
 
     private static int back(CommandContext<CommandSourceStack> context) {
