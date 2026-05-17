@@ -79,6 +79,8 @@ public class DataManager {
             try {
                 Files.createFile(path);
                 PLAYERS.put(playerUUID, playerData);
+                playerData.triggerUpdate();
+                savePlayer(playerData);
             } catch (Exception e) {
                 LOGGER.error("Error while creating player data: {}", e.toString());
             }
@@ -86,12 +88,13 @@ public class DataManager {
     }
 
     public void savePlayer(PlayerData playerData) {
-        playerData.checkForHomeUpdates();
-        if(playerData.isUpdate()){
+        boolean homeUpdate = playerData.checkForHomeUpdates();
+        if(playerData.isUpdate() || homeUpdate){
             Path playerFile = playerDirectory.toPath().resolve(playerData.getPlayerId()+".snbt");
             try{
                 Files.writeString(playerFile, formatString(playerData.writeNbt().toString()));
                 System.out.println("Saved Player File for "+playerData.getPlayerName());
+                playerData.clearUpdate();
             } catch (Exception e) {
                 LOGGER.error(e.getMessage());
             }
@@ -198,14 +201,11 @@ public class DataManager {
                             serverPlayer,
                             currentTick + 600 //replace with config timeout eventually
                     ));
+            target.sendSystemMessage(Component.literal("Receiving teleport request from: "+serverPlayer.getDisplayName().getString()));
+            target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond.."));
             return 1;
         }
         return -1;
-    }
-
-    public static int removeTeleportRequest(ServerPlayer serverPlayer){
-        TELEPORT_APPROVAL_REQUESTS.remove(serverPlayer.getUUID());
-        return TELEPORT_APPROVAL_REQUESTS.containsKey(serverPlayer.getUUID()) ? 0 : 1;
     }
 
     public static int approveTeleportRequest(ServerPlayer receiver){
@@ -227,6 +227,7 @@ public class DataManager {
             TELEPORT_APPROVAL_REQUESTS.remove(receiver.getUUID());
             return 1;
         }
+        receiver.sendSystemMessage(Component.literal("Teleport Request Has Expired"));
         return 0;
     }
 
@@ -253,7 +254,18 @@ public class DataManager {
         }
         TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
                 entry -> currentTick >= entry.getValue().getExpiresAtTick());
+
+        TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
+                entry -> {
+                    if(currentTick >= entry.getValue().getExpiresAtTick()){
+                        entry.getValue().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Timed Out."));
+                        return true;
+                    }
+                    return false;
+                }
+        );
+
         APPROVED_TELEPORTS.entrySet().removeIf(entry ->
-                SyrupEssentials.teleportPlayer(entry.getValue().getTeleportPos(), entry.getValue().getSenderPlayer()));
+                SyrupEssentials.teleportPlayer(entry.getValue().getTeleportPos(), entry.getValue().getSenderPlayer(), true));
     }
 }

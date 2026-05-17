@@ -3,7 +3,6 @@ package net.syrupstudios.syrupessentials.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -16,7 +15,7 @@ import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.slf4j.Logger;
 
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 
 import static net.syrupstudios.syrupessentials.SyrupEssentials.teleportPlayer;
 
@@ -78,21 +77,19 @@ public class TeleportCommands {
         try{
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
-            TeleportPos lastLocation = player.getLastLocation();
+            Optional<TeleportPos> lastLocation = player.popLocationHistory();
 
-            context.getSource().getServer();
-
-            if(lastLocation != null){
-                player.popLocationHistory();
-                teleportPlayer(lastLocation, serverPlayer);
+            if(lastLocation.isPresent()){
+                teleportPlayer(lastLocation.get(), serverPlayer, false);
                 CommandUtil.commandSuccess("Returned to last location", context);
+                return 1;
             }
             else {
-
+                CommandUtil.commandFailure("No Previous location to teleport to..", context);
             }
 
         } catch (Exception e) {
-
+            LOGGER.error("Error teleporting player to last location", e);
         }
         return 0;
     }
@@ -211,11 +208,11 @@ public class TeleportCommands {
 
 
             if(homes.size() == 1){
-                teleportPlayer(homes.get(homes.keySet().iterator().next()), serverPlayer);
+                teleportPlayer(homes.get(homes.keySet().iterator().next()), serverPlayer, true);
                 return 1;
             }
             if(homes.containsKey("home")){
-                teleportPlayer(homes.get("home"), serverPlayer);
+                teleportPlayer(homes.get("home"), serverPlayer, true);
                 return 1;
             }
             else {
@@ -236,7 +233,7 @@ public class TeleportCommands {
             String homeName = context.getArgument("home_name", String.class);
 
             if(player.getHomes().getDestinations().containsKey(homeName)){
-                teleportPlayer(player.getHomes().getDestinations().get(homeName), serverPlayer);
+                teleportPlayer(player.getHomes().getDestinations().get(homeName), serverPlayer, true);
                 return 1;
             }
             else {

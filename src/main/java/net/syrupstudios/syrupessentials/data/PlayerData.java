@@ -80,8 +80,8 @@ public class PlayerData {
         this.update = false;
     }
 
-    public void checkForHomeUpdates() {
-        this.update = homes.requiresUpdate();
+    public boolean checkForHomeUpdates() {
+        return homes.requiresUpdate();
     }
 
     public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
@@ -111,11 +111,11 @@ public class PlayerData {
         this.homes.removeLocation(name);
     }
 
-    public void popLocationHistory() {
+    public Optional<TeleportPos> popLocationHistory() {
         if (!locationHistory.isEmpty()) {
-            locationHistory.removeLast();
-            triggerUpdate();
+            return Optional.of(locationHistory.removeLast());
         }
+        return Optional.empty();
     }
 
     public void readNbt(CompoundTag tag){

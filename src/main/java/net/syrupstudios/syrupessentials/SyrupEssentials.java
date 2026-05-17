@@ -53,7 +53,6 @@ public class SyrupEssentials implements ModInitializer {
 		PlayerData playerData = DataManager.getOrCreate(player).orElseThrow();
 		TeleportPos deathLoc = new TeleportPos(player.level(), player.blockPosition(), player.getXRot(), player.getYRot());
 		playerData.addTeleportHistory(deathLoc);
-		playerData.setLastLocation(deathLoc);
 	}
 
 	private void playerJoin(ServerGamePacketListenerImpl phase) {
@@ -74,9 +73,11 @@ public class SyrupEssentials implements ModInitializer {
 		}
 	}
 
-	public static boolean teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer){
+	public static boolean teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer, boolean addToTeleportHistory){
 		PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
-		player.addTeleportHistory(serverPlayer);
+		if(addToTeleportHistory) {
+			player.addTeleportHistory(serverPlayer);
+		}
 		serverPlayer.teleportTo(
 				Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
 				tpos.getPos().getX()+0.5,
