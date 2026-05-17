@@ -13,15 +13,15 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.syrupstudios.syrupessentials.commands.TeleportCommands;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.util.DataManager;
+import net.syrupstudios.syrupessentials.util.TeleportManager;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-
 public class SyrupEssentials implements ModInitializer {
 	public static final String MOD_ID = "syrup-essentials";
 	private DataManager dataManager;
+	private TeleportManager teleportManager;
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -32,8 +32,10 @@ public class SyrupEssentials implements ModInitializer {
 				(commandDispatcher, commandBuildContext, commandSelection) ->
 						TeleportCommands.register(commandDispatcher)));
 
-		ServerLifecycleEvents.SERVER_STARTED.register((server) ->
-				dataManager = new DataManager(server));
+		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
+					dataManager = new DataManager(server);
+					teleportManager = new TeleportManager(server);
+				});
 
 		ServerTickEvents.START_SERVER_TICK.register(this::tick);
 
@@ -72,23 +74,8 @@ public class SyrupEssentials implements ModInitializer {
 		}
 	}
 
-	public static boolean teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer, boolean addToTeleportHistory){
-		PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
-		if(addToTeleportHistory) {
-			player.addTeleportHistory(serverPlayer);
-		}
-		serverPlayer.teleportTo(
-				Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
-				tpos.getPos().getX()+0.5,
-				tpos.getPos().getY(),
-				tpos.getPos().getZ()+0.5,
-				tpos.getYaw(),
-				tpos.getPitch()
-		);
-		return true;
-	}
-
 	private void tick(MinecraftServer minecraftServer) {
 		dataManager.onServerTick();
+		teleportManager.onServerTick();
 	}
 }

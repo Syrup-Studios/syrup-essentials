@@ -44,11 +44,11 @@ public class WorldData {
     }
 
     public void createWarp(String name, ServerPlayer serverPlayer) {
-        this.warps.createWarp(name, new TeleportPos(serverPlayer.level().dimension(), serverPlayer.blockPosition()));
+        this.warps.addLocation(name, new TeleportPos(serverPlayer.level().dimension(), serverPlayer.blockPosition()));
     }
 
     public void deleteWarp(String name) {
-        this.warps.removeWarp(name);
+        this.warps.removeLocation(name);
     }
 
 }

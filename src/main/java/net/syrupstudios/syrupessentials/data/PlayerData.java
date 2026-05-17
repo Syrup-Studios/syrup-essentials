@@ -78,6 +78,7 @@ public class PlayerData {
 
     public void clearUpdate(){
         this.update = false;
+        this.getHomes().clearUpdate();
     }
 
     public boolean checkForHomeUpdates() {
@@ -99,8 +100,6 @@ public class PlayerData {
         while (locationHistory.size() > MAX_HISTORY_LOCATIONS) {
             locationHistory.removeFirst();
         }
-
-        triggerUpdate();
     }
 
     public void addHome(String name, ServerPlayer serverPlayer){

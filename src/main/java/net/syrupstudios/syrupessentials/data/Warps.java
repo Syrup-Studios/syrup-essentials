@@ -13,9 +13,15 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 public class Warps extends Locations {
     private final WorldData worldData;
+    private boolean requireUpdate;
 
     @Override
     protected void update() {
+        this.requireUpdate = true;
+    }
+
+    public boolean requiresUpdate(){
+        return this.requireUpdate;
     }
 
     public Warps(WorldData worldData, Map<String, TeleportPos> destinations){
@@ -34,14 +40,5 @@ public class Warps extends Locations {
                         .fieldOf("destinations")
                         .forGetter(Locations::getDestinations))
             .apply(builder, Warps::new));
-
-
-    public void createWarp(String name, TeleportPos pos){
-        this.addLocation(name, pos);
-    }
-
-    public void removeWarp(String name) {
-        this.removeLocation(name);
-    }
 
 }

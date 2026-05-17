@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.util.CommandUtil;
 import net.syrupstudios.syrupessentials.util.DataManager;
+import net.syrupstudios.syrupessentials.util.TeleportManager;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.slf4j.Logger;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static net.syrupstudios.syrupessentials.SyrupEssentials.teleportPlayer;
+import static net.syrupstudios.syrupessentials.util.TeleportManager.teleportPlayer;
 
 public class TeleportCommands {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -264,11 +265,11 @@ public class TeleportCommands {
     }
 
     private static int tpaDeny(CommandContext<CommandSourceStack> context) {
-        return DataManager.denyTeleportRequest(context.getSource().getPlayer());
+        return TeleportManager.denyTeleportRequest(context.getSource().getPlayer());
     }
 
     private static int tpaAccept(CommandContext<CommandSourceStack> context) {
-        return DataManager.approveTeleportRequest(context.getSource().getPlayer());
+        return TeleportManager.approveTeleportRequest(context.getSource().getPlayer());
     }
 
     private static int tpa(CommandContext<CommandSourceStack> context) {
@@ -276,7 +277,7 @@ public class TeleportCommands {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
             player.addTeleportHistory(serverPlayer);
-            Integer result = DataManager.teleportRequest(
+            Integer result = TeleportManager.teleportRequest(
                     serverPlayer,
                     context.getSource().getServer(),
                     EntityArgument.getPlayer(context, "player").getDisplayName().getString()

@@ -31,6 +31,8 @@ public class Homes extends Locations {
         return this.requireUpdate;
     }
 
+    public void clearUpdate() { this.requireUpdate = false; }
+
     public static final Codec<Homes> CODEC = RecordCodecBuilder.create(builder -> builder.group(
             Codec.unboundedMap(Codec.STRING, TeleportPos.CODEC)
                     .fieldOf("destinations")
