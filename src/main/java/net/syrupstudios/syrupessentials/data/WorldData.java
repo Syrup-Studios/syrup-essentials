@@ -49,7 +49,7 @@ public class WorldData {
         ).apply(builder, WorldData::new));
 
     public void readNbt(CompoundTag tag){
-        Optional<WorldData> worldData = CODEC.parse(NbtOps.INSTANCE, tag)
+        Optional<WorldData> worldData = CODEC.parse(NbtOps.INSTANCE, tag.get("worldData"))
                 .resultOrPartial(LOGGER::error);
 
         worldData.ifPresent(data -> {
@@ -66,7 +66,7 @@ public class WorldData {
     }
 
     public void createWarp(String name, ServerPlayer serverPlayer) {
-        this.warps.addLocation(name, new TeleportPos(serverPlayer.level().dimension(), serverPlayer.blockPosition()));
+        this.warps.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
         triggerUpdate();
     }
 

@@ -34,7 +34,7 @@ public class DataManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
     private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
-    private static WorldData WORLD_DATA = new WorldData();
+    private static WorldData WORLD_DATA;
     private static long currentTick;
 
     public DataManager(MinecraftServer server) {
@@ -122,7 +122,7 @@ public class DataManager {
             try{
                 Files.writeString(worldFile, formatString(worldData.writeNbt().toString()));
                 System.out.println("Saved world file "+server.getWorldData().getLevelName());
-                worldData.getWarps().clearUpdate();
+                worldData.clearUpdate();
             } catch (Exception e){
                 LOGGER.error("Error saving world",e);
             }

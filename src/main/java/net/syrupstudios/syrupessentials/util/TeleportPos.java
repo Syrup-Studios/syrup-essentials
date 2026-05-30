@@ -23,7 +23,7 @@ public class TeleportPos {
             ResourceKey.codec(Registries.DIMENSION).fieldOf("dim").forGetter(p -> p.dimensionId),
             BlockPos.CODEC.fieldOf("pos").forGetter(TeleportPos::getPos),
             Codec.FLOAT.fieldOf("yaw").forGetter(p -> p.yaw),
-            Codec.FLOAT.fieldOf("yaw").forGetter(p -> p.pitch),
+            Codec.FLOAT.fieldOf("pitch").forGetter(p -> p.pitch),
             Codec.LONG.fieldOf("time").forGetter(p -> p.time)
     ).apply(builder, TeleportPos::new));
 

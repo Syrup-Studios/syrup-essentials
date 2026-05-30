@@ -61,22 +61,22 @@ public class TeleportCommands {
                 .executes(TeleportCommands::setDefaultHome));
 
         dispatcher.register(Commands.literal("warp")
-                .then(Commands.literal("list")
-                        .executes(TeleportCommands::listWarps))
-                .then(Commands.argument("warp_name", StringArgumentType.string()))
-                        .executes(TeleportCommands::warp));
+                .then(Commands.argument("warp_name", StringArgumentType.string())
+                        .suggests(TeleportCommands::suggestWarps)
+                        .executes(TeleportCommands::warp)));
 
         dispatcher.register(Commands.literal("setwarp")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("warp_name", StringArgumentType.string())
-                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(TeleportCommands::setWarp)));
 
         dispatcher.register(Commands.literal("delwarp")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("warp_name", StringArgumentType.string())
                         .executes(TeleportCommands::delWarp)));
 
         dispatcher.register(Commands.literal("listwarps")
-                .executes(TeleportCommands::delWarp));
+                .executes(TeleportCommands::listWarps));
 
         dispatcher.register(Commands.literal("back")
                 .executes(TeleportCommands::back));

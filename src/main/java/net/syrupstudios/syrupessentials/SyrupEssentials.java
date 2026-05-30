@@ -35,7 +35,7 @@ public class SyrupEssentials implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
 					dataManager = new DataManager(server);
 					teleportManager = new TeleportManager(server);
-					dataManager.loadWorld(server);
+					createWorld(server);
 				});
 
 		ServerTickEvents.START_SERVER_TICK.register(this::tick);
@@ -63,6 +63,14 @@ public class SyrupEssentials implements ModInitializer {
 		}
 		catch (Exception e) {
 			LOGGER.error("Error Loading Player: {}", phase.getPlayer().getDisplayName().getString());
+		}
+	}
+
+	private void createWorld(MinecraftServer server){
+		try {
+			dataManager.loadWorld(server);
+		} catch (Exception e) {
+			LOGGER.error("Error Loading World: {}", server.getWorldData().getLevelName());
 		}
 	}
 
