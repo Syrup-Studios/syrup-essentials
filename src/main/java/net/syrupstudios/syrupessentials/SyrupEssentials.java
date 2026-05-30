@@ -35,6 +35,7 @@ public class SyrupEssentials implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
 					dataManager = new DataManager(server);
 					teleportManager = new TeleportManager(server);
+					dataManager.loadWorld(server);
 				});
 
 		ServerTickEvents.START_SERVER_TICK.register(this::tick);
@@ -51,7 +52,7 @@ public class SyrupEssentials implements ModInitializer {
 	}
 
 	private void saveDeathLocation(ServerPlayer player) {
-		PlayerData playerData = DataManager.getOrCreate(player).orElseThrow();
+		PlayerData playerData = DataManager.getOrCreatePlayer(player).orElseThrow();
 		TeleportPos deathLoc = new TeleportPos(player.level(), player.blockPosition(), player.getXRot(), player.getYRot());
 		playerData.addTeleportHistory(deathLoc);
 	}
@@ -67,7 +68,7 @@ public class SyrupEssentials implements ModInitializer {
 
 	private void playerLeave(ServerGamePacketListenerImpl phase, MinecraftServer server) {
 		try {
-			dataManager.savePlayer(DataManager.getOrCreate(phase.getPlayer()).orElseThrow());
+			dataManager.savePlayer(DataManager.getOrCreatePlayer(phase.getPlayer()).orElseThrow());
 		}
 		catch (Exception e) {
 			LOGGER.error("Error Saving Player: {}", phase.getPlayer().getDisplayName().getString());

@@ -14,17 +14,17 @@ import java.util.Map;
 public class Homes extends Locations {
     private boolean requireUpdate = false;
 
+    @Override
+    protected void update() {
+        this.requireUpdate = true;
+    }
+
     public Homes(){
         super(new HashMap<>());
     }
 
     public Homes(Map<String, TeleportPos> destinations) {
         super(new HashMap<>(destinations));
-    }
-
-    @Override
-    protected void update() {
-        this.requireUpdate = true;
     }
 
     public boolean requiresUpdate(){

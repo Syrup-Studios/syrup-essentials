@@ -2,11 +2,9 @@ package net.syrupstudios.syrupessentials.util;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.syrupstudios.syrupessentials.SyrupEssentials;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
 import org.jetbrains.annotations.Nullable;
@@ -17,8 +15,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+
+import static net.syrupstudios.syrupessentials.util.SNBTFormatter.formatString;
 
 public class DataManager {
     private static final String MOD_PATH = "syrup_essential_data";
@@ -33,7 +34,7 @@ public class DataManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final MinecraftServer minecraftServer;
     private static final Map<UUID, PlayerData> PLAYERS = new HashMap<>();
-    private WorldData worldData;
+    private static WorldData WORLD_DATA = new WorldData();
     private static long currentTick;
 
     public DataManager(MinecraftServer server) {
@@ -57,7 +58,7 @@ public class DataManager {
 
     public void loadPlayer(UUID playerUUID){
         Path path = playerDirectory.toPath().resolve(playerUUID + ".snbt");
-        PlayerData playerData = getOrCreate(minecraftServer,playerUUID).orElseThrow();
+        PlayerData playerData = getOrCreatePlayer(minecraftServer,playerUUID).orElseThrow();
         if (Files.exists(path)) {
             try {
                 playerData.readNbt(TagParser.parseTag(new String(Files.readAllBytes(path))));
@@ -78,6 +79,29 @@ public class DataManager {
         }
     }
 
+    public void loadWorld(MinecraftServer minecraftServer){
+        Path path = worldDirectory.toPath().resolve(minecraftServer.getWorldData().getLevelName() + ".snbt");
+        WorldData worldData = getOrCreateWorld(minecraftServer).orElseThrow();
+        if(Files.exists(path)){
+            try {
+                worldData.readNbt(TagParser.parseTag(new String(Files.readAllBytes(path))));
+                WORLD_DATA = worldData;
+            } catch (Exception e) {
+                LOGGER.error("Error while reading world data: {}", e.toString());
+            }
+        }
+        else {
+            try {
+                Files.createFile(path);
+                WORLD_DATA = worldData;
+                worldData.triggerUpdate();
+                saveWorld(worldData, minecraftServer);
+            } catch (Exception e) {
+                LOGGER.error("Error while creating world data: {}", e.toString());
+            }
+        }
+    }
+
     public void savePlayer(PlayerData playerData) {
         boolean homeUpdate = playerData.checkForHomeUpdates();
         if(playerData.isUpdate() || homeUpdate){
@@ -87,7 +111,20 @@ public class DataManager {
                 System.out.println("Saved Player File for "+playerData.getPlayerName());
                 playerData.clearUpdate();
             } catch (Exception e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("Error saving player",e);
+            }
+        }
+    }
+
+    public void saveWorld(WorldData worldData, MinecraftServer server){
+        if(worldData.isUpdate()){
+            Path worldFile = worldDirectory.toPath().resolve(server.getWorldData().getLevelName()+".snbt");
+            try{
+                Files.writeString(worldFile, formatString(worldData.writeNbt().toString()));
+                System.out.println("Saved world file "+server.getWorldData().getLevelName());
+                worldData.getWarps().clearUpdate();
+            } catch (Exception e){
+                LOGGER.error("Error saving world",e);
             }
         }
     }
@@ -104,66 +141,7 @@ public class DataManager {
         LOGGER.info("All player data saved.");
     }
 
-    private String formatString(String snbt) {
-        String result = "";
-        int indent = 0;
-        boolean inQuote = false;
-        boolean inTypedArray = false;
-        char last = 0;
-        for (int i = 0; i < snbt.length(); i++) {
-            char c = snbt.charAt(i);
-            if (c == '"' && last != '\\') inQuote = !inQuote;
-            if (inQuote) {
-                result += c;
-            } else if (inTypedArray) {
-                if (c == ',') result += ", ";
-                else {
-                    result += c;
-                    if (c == ']') inTypedArray = false;
-                }
-            } else {
-                switch (c) {
-                    case '{' -> {
-                        result += "{\n";
-                        indent++;
-                        for (int j = 0; j < indent; j++) result += "  ";
-                    }
-                    case '}' -> {
-                        result += "\n";
-                        indent--;
-                        for (int j = 0; j < indent; j++) result += "  ";
-                        result += "}";
-                    }
-                    case '[' -> {
-                        if (i + 2 < snbt.length() && snbt.charAt(i + 2) == ';') {
-                            result += "[";
-                            inTypedArray = true;
-                        } else {
-                            result += "[\n";
-                            indent++;
-                            for (int j = 0; j < indent; j++) result += "  ";
-                        }
-                    }
-                    case ']' -> {
-                        result += "\n";
-                        indent--;
-                        for (int j = 0; j < indent; j++) result += "  ";
-                        result += "]";
-                    }
-                    case ',' -> {
-                        result += ",\n";
-                        for (int j = 0; j < indent; j++) result += "  ";
-                    }
-                    case ':' -> result += ": ";
-                    default -> result += c;
-                }
-            }
-            last = c;
-        }
-        return result;
-    }
-
-    public static Optional<PlayerData> getOrCreate(MinecraftServer server, UUID playerId) {
+    public static Optional<PlayerData> getOrCreatePlayer(MinecraftServer server, UUID playerId) {
         if (PLAYERS.containsKey(playerId)) {
             return Optional.of(PLAYERS.get(playerId));
         }
@@ -173,7 +151,7 @@ public class DataManager {
                 .map(profile -> PLAYERS.computeIfAbsent(playerId, k -> new PlayerData(playerId, profile.getName())));
     }
 
-    public static Optional<PlayerData> getOrCreate(@Nullable Player player) {
+    public static Optional<PlayerData> getOrCreatePlayer(@Nullable Player player) {
         if (player == null) {
             return Optional.empty();
         }
@@ -181,10 +159,23 @@ public class DataManager {
         return Optional.of(PLAYERS.computeIfAbsent(player.getUUID(), k -> new PlayerData(player.getUUID(), player.getGameProfile().getName())));
     }
 
+    public static Optional<WorldData> getOrCreateWorld(MinecraftServer server){
+        return Optional.of(Objects.requireNonNullElseGet(WORLD_DATA, () -> new WorldData(server.getWorldData().getLevelName())));
+    }
+
+    public static Optional<WorldData> getOrCreateWorld(@Nullable Player player){
+        if (player == null){
+            return Optional.empty();
+        }
+
+        return Optional.of(Objects.requireNonNullElseGet(WORLD_DATA, () -> new WorldData(Objects.requireNonNull(player.getServer()).getWorldData().getLevelName())));
+    }
+
     public void onServerTick(){
         currentTick++;
         if(currentTick % 600 == 0){
             savePlayers(minecraftServer);
+            saveWorld(WORLD_DATA, minecraftServer);
         }
     }
 }

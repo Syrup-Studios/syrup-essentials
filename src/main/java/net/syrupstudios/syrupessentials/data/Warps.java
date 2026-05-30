@@ -12,33 +12,33 @@ import java.util.Map;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Warps extends Locations {
-    private final WorldData worldData;
-    private boolean requireUpdate;
+    private boolean requireUpdate = false;
 
     @Override
     protected void update() {
         this.requireUpdate = true;
     }
 
+    public Warps() {
+        super(new HashMap<>());
+    }
+
+    public Warps(Map<String, TeleportPos> destinations){
+        super(new HashMap<>(destinations));
+    }
+
     public boolean requiresUpdate(){
         return this.requireUpdate;
     }
 
-    public Warps(WorldData worldData, Map<String, TeleportPos> destinations){
-        super(new HashMap<>(destinations));
-        this.worldData = worldData;
-    }
-
-    public Warps(WorldData worldData) {
-        super(new HashMap<>());
-        this.worldData = worldData;
+    public void clearUpdate(){
+        this.requireUpdate = false;
     }
 
     public static final Codec<Warps> CODEC = RecordCodecBuilder.create(builder -> builder.group(
-            WorldData.CODEC.fieldOf("worldData").forGetter(warps -> warps.worldData),
             Codec.unboundedMap(Codec.STRING, TeleportPos.CODEC)
-                        .fieldOf("destinations")
-                        .forGetter(Locations::getDestinations))
-            .apply(builder, Warps::new));
+                    .fieldOf("destinations")
+                    .forGetter(Locations::getDestinations)
+    ).apply(builder, Warps::new));
 
 }

@@ -78,10 +78,12 @@ public class TeleportManager {
     }
 
     public static boolean teleportPlayer(TeleportPos tpos, ServerPlayer serverPlayer, boolean addToTeleportHistory){
-        PlayerData player = DataManager.getOrCreate(serverPlayer).orElseThrow();
+        PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
         if(addToTeleportHistory) {
             player.addTeleportHistory(serverPlayer);
         }
+        //delay here, if 5 seconds elapses without interruption proceed to teleport
+
         serverPlayer.teleportTo(
                 Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
                 tpos.getPos().getX()+0.5,

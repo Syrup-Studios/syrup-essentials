@@ -66,7 +66,7 @@ public class PlayerData {
             Codec.BOOL.fieldOf("canFly").forGetter(playerData -> playerData.canFly),
             Codec.BOOL.fieldOf("godmode").forGetter(playerData -> playerData.godmode),
             Codec.STRING.fieldOf("nickname").forGetter(playerData ->playerData.nickname)
-            ).apply(builder, PlayerData::new));
+        ).apply(builder, PlayerData::new));
 
     public Optional<TeleportPos> getLastSeenPos() {
         return Optional.ofNullable(lastLocation);
@@ -86,7 +86,7 @@ public class PlayerData {
     }
 
     public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
-        DataManager.getOrCreate(player).ifPresent(data -> data.addTeleportHistory(
+        DataManager.getOrCreatePlayer(player).ifPresent(data -> data.addTeleportHistory(
                 new TeleportPos(dimension, pos, player.getXRot(), player.getYRot())));
     }
 
@@ -104,10 +104,12 @@ public class PlayerData {
 
     public void addHome(String name, ServerPlayer serverPlayer){
         this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
+        triggerUpdate();
     }
 
     public void removeHome(String name) {
         this.homes.removeLocation(name);
+        triggerUpdate();
     }
 
     public Optional<TeleportPos> popLocationHistory() {
