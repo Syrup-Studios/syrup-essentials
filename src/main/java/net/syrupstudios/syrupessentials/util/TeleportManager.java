@@ -1,5 +1,6 @@
 package net.syrupstudios.syrupessentials.util;
 
+import lombok.NoArgsConstructor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,15 +11,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+@NoArgsConstructor
 public class TeleportManager {
-    static final HashMap<UUID, TeleportRequest> APPROVED_TELEPORTS = new HashMap<>();
-    static final HashMap<UUID, TeleportRequest> TELEPORT_APPROVAL_REQUESTS = new HashMap<>();
-    private MinecraftServer minecraftServer;
+    private static final HashMap<UUID, TeleportRequest> APPROVED_TELEPORTS = new HashMap<>();
+    private static final HashMap<UUID, TeleportRequest> TELEPORT_APPROVAL_REQUESTS = new HashMap<>();
+    private static final int TIMEOUT_THRESHOLD = 600; //TODO: replace w/ config timeout
     private static long currentTick;
-
-    public TeleportManager(MinecraftServer minecraftServer){
-        this.minecraftServer = minecraftServer;
-    }
 
     public static int teleportRequest(ServerPlayer serverPlayer, MinecraftServer server, String destinationPlayerName){
         ServerPlayer target = server.getPlayerList().getPlayerByName(destinationPlayerName);
@@ -29,7 +27,7 @@ public class TeleportManager {
                             new TeleportPos(target.level(), target.blockPosition(), target.getXRot(), target.getYRot()),
                             target.getUUID(),
                             serverPlayer,
-                            currentTick + 600 //replace with config timeout eventually
+                            currentTick + TIMEOUT_THRESHOLD
                     ));
             target.sendSystemMessage(Component.literal("Receiving teleport request from: "+serverPlayer.getDisplayName().getString()));
             target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond.."));
@@ -82,7 +80,7 @@ public class TeleportManager {
         if(addToTeleportHistory) {
             player.addTeleportHistory(serverPlayer);
         }
-        //delay here, if 5 seconds elapses without interruption proceed to teleport
+        //TODO: delay here, if 5 seconds elapses without interruption proceed to teleport
 
         serverPlayer.teleportTo(
                 Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),

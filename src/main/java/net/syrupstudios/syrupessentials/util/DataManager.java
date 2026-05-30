@@ -24,9 +24,11 @@ import static net.syrupstudios.syrupessentials.util.SNBTFormatter.formatString;
 public class DataManager {
     private static final String MOD_PATH = "syrup_essential_data";
     private static final String WORLD_PATH = "world_data";
+    //TODO: implement config via data file
     private static final String DATA_FILE = "data.snbt";
     private static final String PLAYER_PATH = "player_data";
     private static final String CONFIG_PATH = "config";
+    private static final int SAVE_INTERVAL = 3600;
     private final File dataDirectory;
     private final File worldDirectory;
     private final File playerDirectory;
@@ -94,8 +96,8 @@ public class DataManager {
             try {
                 Files.createFile(path);
                 WORLD_DATA = worldData;
-                worldData.triggerUpdate();
-                saveWorld(worldData, minecraftServer);
+                WORLD_DATA.triggerUpdate();
+                saveWorld(minecraftServer);
             } catch (Exception e) {
                 LOGGER.error("Error while creating world data: {}", e.toString());
             }
@@ -108,7 +110,7 @@ public class DataManager {
             Path playerFile = playerDirectory.toPath().resolve(playerData.getPlayerId()+".snbt");
             try{
                 Files.writeString(playerFile, formatString(playerData.writeNbt().toString()));
-                System.out.println("Saved Player File for "+playerData.getPlayerName());
+                LOGGER.info("Saved Player File for {}", playerData.getPlayerName());
                 playerData.clearUpdate();
             } catch (Exception e) {
                 LOGGER.error("Error saving player",e);
@@ -116,15 +118,15 @@ public class DataManager {
         }
     }
 
-    public void saveWorld(WorldData worldData, MinecraftServer server){
-        if(worldData.isUpdate()){
+    public void saveWorld(MinecraftServer server){
+        if(WORLD_DATA.isUpdate()){
             Path worldFile = worldDirectory.toPath().resolve(server.getWorldData().getLevelName()+".snbt");
             try{
-                Files.writeString(worldFile, formatString(worldData.writeNbt().toString()));
-                System.out.println("Saved world file "+server.getWorldData().getLevelName());
-                worldData.clearUpdate();
+                Files.writeString(worldFile, formatString(WORLD_DATA.writeNbt().toString()));
+                LOGGER.info("Saved world file to {}", worldFile);
+                WORLD_DATA.clearUpdate();
             } catch (Exception e){
-                LOGGER.error("Error saving world",e);
+                LOGGER.error("Error saving world", e);
             }
         }
     }
@@ -146,7 +148,6 @@ public class DataManager {
             return Optional.of(PLAYERS.get(playerId));
         }
 
-        // Check if the player file exists
         return server.getProfileCache().get(playerId)
                 .map(profile -> PLAYERS.computeIfAbsent(playerId, k -> new PlayerData(playerId, profile.getName())));
     }
@@ -163,19 +164,11 @@ public class DataManager {
         return Optional.of(Objects.requireNonNullElseGet(WORLD_DATA, () -> new WorldData(server.getWorldData().getLevelName())));
     }
 
-    public static Optional<WorldData> getOrCreateWorld(@Nullable Player player){
-        if (player == null){
-            return Optional.empty();
-        }
-
-        return Optional.of(Objects.requireNonNullElseGet(WORLD_DATA, () -> new WorldData(Objects.requireNonNull(player.getServer()).getWorldData().getLevelName())));
-    }
-
     public void onServerTick(){
         currentTick++;
-        if(currentTick % 600 == 0){
+        if(currentTick % SAVE_INTERVAL == 0){
             savePlayers(minecraftServer);
-            saveWorld(WORLD_DATA, minecraftServer);
+            saveWorld(minecraftServer);
         }
     }
 }

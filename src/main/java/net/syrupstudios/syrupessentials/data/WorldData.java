@@ -6,9 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Data;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.slf4j.Logger;
 
@@ -24,9 +22,6 @@ public class WorldData {
     public WorldData(String levelName){
         this.warps = new Warps();
         this.levelName = levelName;
-    }
-
-    public WorldData(){
     }
 
     public WorldData(Warps warps, String levelName){

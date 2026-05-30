@@ -1,16 +1,18 @@
 package net.syrupstudios.syrupessentials.data;
 
+import com.mojang.logging.LogUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
-import java.util.Map;
 
 
 @Data
 @AllArgsConstructor
 public abstract class Locations {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private HashMap<String, TeleportPos> destinations;
 
     public void addLocation(String name, TeleportPos teleportPos){
@@ -19,12 +21,12 @@ public abstract class Locations {
         update();
     }
 
-    public boolean removeLocation(String name){
+    public void removeLocation(String name){
         if(destinations.remove(name) == null){
-            return false;
+            LOGGER.error("Unable to remove location with name: {}", name);
+            return;
         }
         update();
-        return true;
     }
 
     public String listNames(){

@@ -68,10 +68,6 @@ public class PlayerData {
             Codec.STRING.fieldOf("nickname").forGetter(playerData ->playerData.nickname)
         ).apply(builder, PlayerData::new));
 
-    public Optional<TeleportPos> getLastSeenPos() {
-        return Optional.ofNullable(lastLocation);
-    }
-
     public void triggerUpdate(){
         this.update = true;
     }

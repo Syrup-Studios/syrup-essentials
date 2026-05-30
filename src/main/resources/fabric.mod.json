@@ -3,7 +3,7 @@
 	"id": "syrup-essentials",
 	"version": "${version}",
 	"name": "Syrup Essentials",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Syrup Studio's Essentials Mod adding commands for players and server operators",
 	"authors": [
 		"Me!"
 	],

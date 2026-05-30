@@ -34,7 +34,7 @@ public class SyrupEssentials implements ModInitializer {
 
 		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
 					dataManager = new DataManager(server);
-					teleportManager = new TeleportManager(server);
+					teleportManager = new TeleportManager();
 					createWorld(server);
 				});
 
@@ -48,7 +48,13 @@ public class SyrupEssentials implements ModInitializer {
 				saveDeathLocation(player);
 			}
 		}));
+
 		ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeave);
+
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+				dataManager.saveWorld(server);
+				dataManager.savePlayers(server);
+		});
 	}
 
 	private void saveDeathLocation(ServerPlayer player) {

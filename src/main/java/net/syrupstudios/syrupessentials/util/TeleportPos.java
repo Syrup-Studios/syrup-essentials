@@ -27,14 +27,6 @@ public class TeleportPos {
             Codec.LONG.fieldOf("time").forGetter(p -> p.time)
     ).apply(builder, TeleportPos::new));
 
-    public TeleportPos(ResourceKey<Level> dimensionId, BlockPos pos) {
-        this.dimensionId = dimensionId;
-        this.pos = pos;
-        this.time = System.currentTimeMillis();
-        this.yaw = 0;
-        this.pitch = 0;
-    }
-
     public TeleportPos(ResourceKey<Level> dimensionId, BlockPos pos, float pitch, float yaw) {
         this.dimensionId = dimensionId;
         this.pos = pos;

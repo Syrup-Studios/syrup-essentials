@@ -27,10 +27,6 @@ public class Warps extends Locations {
         super(new HashMap<>(destinations));
     }
 
-    public boolean requiresUpdate(){
-        return this.requireUpdate;
-    }
-
     public void clearUpdate(){
         this.requireUpdate = false;
     }
