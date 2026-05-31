@@ -1,128 +1,139 @@
 package net.syrupstudios.syrupessentials.data;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.Vec3d;
+import com.mojang.logging.LogUtils;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import lombok.Data;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.syrupstudios.syrupessentials.util.DataManager;
+import net.syrupstudios.syrupessentials.util.TeleportPos;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.Optional;
 import java.util.UUID;
 
+@Data
 public class PlayerData {
-    private final UUID playerUuid;
-    private final Map<String, HomeData> homes;
-    private Vec3d lastPosition;
-    private String lastDimension;
-    private int maxHomes = 5;
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final int MAX_HISTORY_LOCATIONS = 10;
+    private final UUID playerId;
+    private final String playerName;
+    @Nullable
+    private TeleportPos lastLocation;
+    private Homes homes;
+    private LinkedList<TeleportPos> locationHistory;
+    private boolean update;
+    private boolean isMuted;
+    private boolean canFly;
+    private boolean godmode;
+    private String nickname;
 
-    public PlayerData(UUID playerUuid) {
-        this.playerUuid = playerUuid;
-        this.homes = new HashMap<>();
+    public PlayerData(UUID playerId, String playerName) {
+        this.playerId = playerId;
+        this.playerName = playerName;
+        this.update = false;
+        this.lastLocation = null;
+        this.homes = new Homes();
+        this.locationHistory = new LinkedList<>();
+        this.isMuted = false;
+        this.canFly = false;
+        this.nickname = "";
     }
 
-    public boolean addHome(String name, ServerPlayerEntity player) {
-        if (homes.size() >= maxHomes) {
-            return false;
+    public PlayerData(UUID playerId, String playerName, Homes homes, boolean isMuted, boolean canFly, boolean godmode, String nickname) {
+        this.playerId = playerId;
+        this.playerName = playerName;
+        this.homes = homes;
+        this.isMuted = isMuted;
+        this.canFly = canFly;
+        this.godmode = godmode;
+        this.nickname = nickname;
+    }
+
+    public static final Codec<PlayerData> CODEC = RecordCodecBuilder.create(builder -> builder.group(
+            UUIDUtil.CODEC.fieldOf("playerId").forGetter(playerData -> playerData.playerId),
+            Codec.STRING.fieldOf("playerName").forGetter(playerData ->playerData.playerName),
+            Homes.CODEC.fieldOf("homes").forGetter(playerData -> playerData.homes),
+            Codec.BOOL.fieldOf("isMuted").forGetter(playerData -> playerData.isMuted),
+            Codec.BOOL.fieldOf("canFly").forGetter(playerData -> playerData.canFly),
+            Codec.BOOL.fieldOf("godmode").forGetter(playerData -> playerData.godmode),
+            Codec.STRING.fieldOf("nickname").forGetter(playerData ->playerData.nickname)
+        ).apply(builder, PlayerData::new));
+
+    public void triggerUpdate(){
+        this.update = true;
+    }
+
+    public void clearUpdate(){
+        this.update = false;
+        this.getHomes().clearUpdate();
+    }
+
+    public boolean checkForHomeUpdates() {
+        return homes.requiresUpdate();
+    }
+
+    public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
+        DataManager.getOrCreatePlayer(player).ifPresent(data -> data.addTeleportHistory(
+                new TeleportPos(dimension, pos, player.getXRot(), player.getYRot())));
+    }
+
+    public void addTeleportHistory(ServerPlayer player) {
+        addTeleportHistory(player, player.level().dimension(), player.blockPosition());
+    }
+
+    public void addTeleportHistory(TeleportPos pos) {
+        locationHistory.add(pos);
+
+        while (locationHistory.size() > MAX_HISTORY_LOCATIONS) {
+            locationHistory.removeFirst();
         }
-
-        HomeData home = new HomeData(
-                player.getX(),
-                player.getY(),
-                player.getZ(),
-                player.getYaw(),
-                player.getPitch(),
-                player.getWorld().getRegistryKey().getValue().toString()
-        );
-
-        homes.put(name.toLowerCase(), home);
-        return true;
     }
 
-    public boolean removeHome(String name) {
-        return homes.remove(name.toLowerCase()) != null;
+    public void addHome(String name, ServerPlayer serverPlayer){
+        this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
+        triggerUpdate();
     }
 
-    public HomeData getHome(String name) {
-        return homes.get(name.toLowerCase());
+    public void removeHome(String name) {
+        this.homes.removeLocation(name);
+        triggerUpdate();
     }
 
-    public Map<String, HomeData> getHomes() {
-        return homes;
-    }
-
-    public int getHomeCount() {
-        return homes.size();
-    }
-
-    public int getMaxHomes() {
-        return maxHomes;
-    }
-
-    public void setMaxHomes(int max) {
-        this.maxHomes = max;
-    }
-
-    public void setLastPosition(Vec3d pos, String dimension) {
-        this.lastPosition = pos;
-        this.lastDimension = dimension;
-    }
-
-    public Vec3d getLastPosition() {
-        return lastPosition;
-    }
-
-    public String getLastDimension() {
-        return lastDimension;
-    }
-
-    public NbtCompound toNbt() {
-        NbtCompound nbt = new NbtCompound();
-
-        NbtList homesList = new NbtList();
-        for (Map.Entry<String, HomeData> entry : homes.entrySet()) {
-            NbtCompound homeNbt = new NbtCompound();
-            homeNbt.putString("name", entry.getKey());
-            homeNbt.put("data", entry.getValue().toNbt());
-            homesList.add(homeNbt);
+    public Optional<TeleportPos> popLocationHistory() {
+        if (!locationHistory.isEmpty()) {
+            return Optional.of(locationHistory.removeLast());
         }
-        nbt.put("homes", homesList);
-
-        if (lastPosition != null) {
-            NbtCompound lastPos = new NbtCompound();
-            lastPos.putDouble("x", lastPosition.x);
-            lastPos.putDouble("y", lastPosition.y);
-            lastPos.putDouble("z", lastPosition.z);
-            lastPos.putString("dimension", lastDimension);
-            nbt.put("last_position", lastPos);
-        }
-
-        return nbt;
+        return Optional.empty();
     }
 
-    public static PlayerData fromNbt(UUID uuid, NbtCompound nbt) {
-        PlayerData data = new PlayerData(uuid);
+    public void readNbt(CompoundTag tag){
+        Optional<PlayerData> readPlayer = CODEC.parse(NbtOps.INSTANCE, tag.get("playerData"))
+                .resultOrPartial(LOGGER::error);
 
-        if (nbt.contains("homes")) {
-            NbtList homesList = nbt.getList("homes", 10);
-            for (int i = 0; i < homesList.size(); i++) {
-                NbtCompound homeNbt = homesList.getCompound(i);
-                String name = homeNbt.getString("name");
-                HomeData home = HomeData.fromNbt(homeNbt.getCompound("data"));
-                data.homes.put(name, home);
-            }
+        if (readPlayer.isPresent()){
+            PlayerData playerData = readPlayer.get();
+            this.lastLocation = playerData.lastLocation;
+            this.homes = playerData.homes;
+            this.isMuted = playerData.isMuted;
+            this.canFly = playerData.canFly;
+            this.godmode = playerData.godmode;
+            this.nickname = playerData.nickname;
         }
+    }
 
-        if (nbt.contains("last_position")) {
-            NbtCompound lastPos = nbt.getCompound("last_position");
-            data.lastPosition = new Vec3d(
-                    lastPos.getDouble("x"),
-                    lastPos.getDouble("y"),
-                    lastPos.getDouble("z")
-            );
-            data.lastDimension = lastPos.getString("dimension");
-        }
-
-        return data;
+    public CompoundTag writeNbt() {
+        CompoundTag tag = new CompoundTag();
+        tag.put("playerData",CODEC.encodeStart(NbtOps.INSTANCE, this).resultOrPartial(LOGGER::error).orElse(null));
+        clearUpdate();
+        return tag;
     }
 }

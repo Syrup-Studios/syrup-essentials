@@ -3,9 +3,9 @@
 	"id": "syrup-essentials",
 	"version": "${version}",
 	"name": "Syrup Essentials",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Syrup Studio's Essentials Mod adding commands for players and server operators",
 	"authors": [
-        "Salad"
+		"Me!"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
@@ -16,17 +16,14 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-          "net.syrupstudios.syrupessentials.SyrupEssentials"
+			"net.syrupstudios.syrupessentials.SyrupEssentials"
 		]
 	},
 	"mixins": [],
 	"depends": {
-		"fabricloader": ">=0.17.3",
+		"fabricloader": ">=0.18.4",
 		"minecraft": "~1.20.1",
 		"java": ">=17",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }
