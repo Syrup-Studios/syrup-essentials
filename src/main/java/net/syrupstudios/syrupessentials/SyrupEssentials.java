@@ -55,6 +55,7 @@ public class SyrupEssentials implements ModInitializer {
 				dataManager.saveWorld(server);
 				dataManager.savePlayers(server);
 				dataManager.flush();
+				teleportManager.flush();
 		});
 	}
 
