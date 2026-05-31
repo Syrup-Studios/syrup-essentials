@@ -60,7 +60,7 @@ public class SyrupEssentials implements ModInitializer {
 
 	private void saveDeathLocation(ServerPlayer player) {
 		PlayerData playerData = DataManager.getOrCreatePlayer(player).orElseThrow();
-		TeleportPos deathLoc = new TeleportPos(player.level(), player.blockPosition(), player.getXRot(), player.getYRot());
+		TeleportPos deathLoc = new TeleportPos(player.level(), player.position(), player.getXRot(), player.getYRot());
 		playerData.addTeleportHistory(deathLoc);
 	}
 

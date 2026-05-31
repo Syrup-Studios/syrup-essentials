@@ -24,7 +24,7 @@ public class TeleportManager {
             TELEPORT_APPROVAL_REQUESTS.put(
                     serverPlayer.getUUID(),
                     new TeleportRequest(
-                            new TeleportPos(target.level(), target.blockPosition(), target.getXRot(), target.getYRot()),
+                            new TeleportPos(target.level(), target.position(), target.getXRot(), target.getYRot()),
                             target.getUUID(),
                             serverPlayer,
                             currentTick + TIMEOUT_THRESHOLD
@@ -84,9 +84,9 @@ public class TeleportManager {
 
         serverPlayer.teleportTo(
                 Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
-                tpos.getPos().getX()+0.5,
-                tpos.getPos().getY(),
-                tpos.getPos().getZ()+0.5,
+                tpos.getPos().x,
+                tpos.getPos().y,
+                tpos.getPos().z,
                 tpos.getYaw(),
                 tpos.getPitch()
         );
