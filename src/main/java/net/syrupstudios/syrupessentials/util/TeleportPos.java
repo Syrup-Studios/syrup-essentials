@@ -35,9 +35,9 @@ public class TeleportPos {
         this.pitch = pitch;
     }
 
-    public TeleportPos(ResourceKey<Level> dimensionId, Vec3 blockPos, float yaw, float pitch, Long time) {
+    public TeleportPos(ResourceKey<Level> dimensionId, Vec3 pos, float yaw, float pitch, Long time) {
         this.dimensionId = dimensionId;
-        this.pos = blockPos;
+        this.pos = pos;
         this.yaw = yaw;
         this.pitch = pitch;
         this.time = time;
