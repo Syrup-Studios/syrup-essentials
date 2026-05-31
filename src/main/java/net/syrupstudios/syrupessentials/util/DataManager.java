@@ -172,4 +172,10 @@ public class DataManager {
             saveWorld(minecraftServer);
         }
     }
+
+    public void flush() {
+        WORLD_DATA = null;
+        PLAYERS.clear();
+        currentTick = 0;
+    }
 }

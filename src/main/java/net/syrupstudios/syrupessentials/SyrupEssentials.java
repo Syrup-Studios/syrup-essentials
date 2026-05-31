@@ -54,6 +54,7 @@ public class SyrupEssentials implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 				dataManager.saveWorld(server);
 				dataManager.savePlayers(server);
+				dataManager.flush();
 		});
 	}
 
