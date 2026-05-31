@@ -5,6 +5,7 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.storage.LevelResource;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +41,7 @@ public class DataManager {
     private static long currentTick;
 
     public DataManager(MinecraftServer server) {
-        this.dataDirectory = server.getServerDirectory().toPath().resolve(MOD_PATH).toFile();
+        this.dataDirectory = server.getWorldPath(LevelResource.ROOT).resolve(MOD_PATH).toFile();
         this.worldDirectory = dataDirectory.toPath().resolve(WORLD_PATH).toFile();
         this.playerDirectory = dataDirectory.toPath().resolve(PLAYER_PATH).toFile();
         this.configDirectory = dataDirectory.toPath().resolve(CONFIG_PATH).toFile();

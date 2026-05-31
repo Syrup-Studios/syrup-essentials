@@ -52,6 +52,7 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("delhome")
                 .then(Commands.argument("home_name", StringArgumentType.string())
+                        .suggests(TeleportCommands::suggestHomes)
                         .executes(TeleportCommands::delHome))
                 .executes(TeleportCommands::delDefaultHome));
 
@@ -73,6 +74,7 @@ public class TeleportCommands {
         dispatcher.register(Commands.literal("delwarp")
                 .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("warp_name", StringArgumentType.string())
+                        .suggests(TeleportCommands::suggestWarps)
                         .executes(TeleportCommands::delWarp)));
 
         dispatcher.register(Commands.literal("listwarps")
