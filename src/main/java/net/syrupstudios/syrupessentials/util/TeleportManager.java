@@ -21,16 +21,21 @@ public class TeleportManager {
     public static int teleportRequest(ServerPlayer serverPlayer, MinecraftServer server, String destinationPlayerName){
         ServerPlayer target = server.getPlayerList().getPlayerByName(destinationPlayerName);
         if (target!=null) {
+            if(Objects.equals(destinationPlayerName, serverPlayer.getDisplayName().getString()))
+            {
+                serverPlayer.sendSystemMessage(Component.literal("You are already where you are...??"));
+                return -1;
+            }
             TELEPORT_APPROVAL_REQUESTS.put(
                     serverPlayer.getUUID(),
                     new TeleportRequest(
-                            new TeleportPos(target.level(), target.blockPosition(), target.getXRot(), target.getYRot()),
+                            new TeleportPos(target.level(), target.position(), target.getXRot(), target.getYRot()),
                             target.getUUID(),
                             serverPlayer,
                             currentTick + TIMEOUT_THRESHOLD
                     ));
             target.sendSystemMessage(Component.literal("Receiving teleport request from: "+serverPlayer.getDisplayName().getString()));
-            target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond.."));
+            target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond"));
             return 1;
         }
         return -1;
@@ -84,9 +89,9 @@ public class TeleportManager {
 
         serverPlayer.teleportTo(
                 Objects.requireNonNull(serverPlayer.getServer()).getLevel(tpos.getDimensionId()),
-                tpos.getPos().getX()+0.5,
-                tpos.getPos().getY(),
-                tpos.getPos().getZ()+0.5,
+                tpos.getPos().x,
+                tpos.getPos().y,
+                tpos.getPos().z,
                 tpos.getYaw(),
                 tpos.getPitch()
         );
@@ -95,8 +100,6 @@ public class TeleportManager {
 
     public void onServerTick(){
         currentTick++;
-        TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
-                entry -> currentTick >= entry.getValue().getExpiresAtTick());
 
         TELEPORT_APPROVAL_REQUESTS.entrySet().removeIf(
                 entry -> {
@@ -107,7 +110,14 @@ public class TeleportManager {
                     return false;
                 }
         );
+
         APPROVED_TELEPORTS.entrySet().removeIf(entry ->
                 teleportPlayer(entry.getValue().getTeleportPos(), entry.getValue().getSenderPlayer(), true));
+    }
+
+    public void flush(){
+        TELEPORT_APPROVAL_REQUESTS.clear();
+        APPROVED_TELEPORTS.clear();
+        currentTick =0;
     }
 }

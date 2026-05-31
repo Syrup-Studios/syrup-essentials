@@ -61,7 +61,7 @@ public class WorldData {
     }
 
     public void createWarp(String name, ServerPlayer serverPlayer) {
-        this.warps.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
+        this.warps.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.position(), serverPlayer.getXRot(), serverPlayer.getYRot()));
         triggerUpdate();
     }
 

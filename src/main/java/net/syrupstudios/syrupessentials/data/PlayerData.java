@@ -4,13 +4,13 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Data;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.syrupstudios.syrupessentials.util.DataManager;
 import net.syrupstudios.syrupessentials.util.TeleportPos;
 import org.jetbrains.annotations.Nullable;
@@ -81,13 +81,13 @@ public class PlayerData {
         return homes.requiresUpdate();
     }
 
-    public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, BlockPos pos) {
+    public static void addTeleportHistory(ServerPlayer player, ResourceKey<Level> dimension, Vec3 pos) {
         DataManager.getOrCreatePlayer(player).ifPresent(data -> data.addTeleportHistory(
                 new TeleportPos(dimension, pos, player.getXRot(), player.getYRot())));
     }
 
     public void addTeleportHistory(ServerPlayer player) {
-        addTeleportHistory(player, player.level().dimension(), player.blockPosition());
+        addTeleportHistory(player, player.level().dimension(), player.position());
     }
 
     public void addTeleportHistory(TeleportPos pos) {
@@ -99,7 +99,7 @@ public class PlayerData {
     }
 
     public void addHome(String name, ServerPlayer serverPlayer){
-        this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.blockPosition(), serverPlayer.getXRot(), serverPlayer.getYRot()));
+        this.homes.addLocation(name, new TeleportPos(serverPlayer.level(), serverPlayer.position(), serverPlayer.getXRot(), serverPlayer.getYRot()));
         triggerUpdate();
     }
 
