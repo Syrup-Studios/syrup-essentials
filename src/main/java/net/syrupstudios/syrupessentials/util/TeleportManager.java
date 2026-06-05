@@ -57,7 +57,7 @@ public class TeleportManager {
                     request.getSenderPlayer().getUUID(),
                     request
             );
-            TELEPORT_APPROVAL_REQUESTS.remove(receiver.getUUID());
+            TELEPORT_APPROVAL_REQUESTS.remove(request.getSenderPlayer().getUUID());
             return 1;
         }
         receiver.sendSystemMessage(Component.literal("Teleport Request Has Expired"));
@@ -71,9 +71,10 @@ public class TeleportManager {
                         .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
         if(possibleTeleportRequest.isPresent()){
-            possibleTeleportRequest.get().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Denied."));
+            TeleportRequest request = possibleTeleportRequest.get();
+            request.getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Denied."));
             receiver.sendSystemMessage(Component.literal("Teleport Request Denied."));
-            TELEPORT_APPROVAL_REQUESTS.remove(receiver.getUUID());
+            TELEPORT_APPROVAL_REQUESTS.remove(request.getSenderPlayer().getUUID());
             return 1;
         }
         receiver.sendSystemMessage(Component.literal("No currently pending teleports found."));
