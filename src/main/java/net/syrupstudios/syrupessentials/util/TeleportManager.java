@@ -1,7 +1,10 @@
 package net.syrupstudios.syrupessentials.util;
 
 import lombok.NoArgsConstructor;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.syrupstudios.syrupessentials.data.PlayerData;
@@ -34,8 +37,51 @@ public class TeleportManager {
                             serverPlayer,
                             currentTick + TIMEOUT_THRESHOLD
                     ));
-            target.sendSystemMessage(Component.literal("Receiving teleport request from: "+serverPlayer.getDisplayName().getString()));
-            target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond"));
+//            target.sendSystemMessage(Component.literal("Receiving teleport request from: "+serverPlayer.getDisplayName().getString()));
+//            target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond"));
+            target.sendSystemMessage(
+                    Component.literal("Teleport request: ")
+                            .append(Component.literal("[ "))
+                            .append(Component.literal(serverPlayer.getDisplayName().getString())
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.AQUA))
+                            .append(Component.literal(" ➤ "))
+                            .append(Component.literal(destinationPlayerName))
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.AQUA))
+                            .append(Component.literal(" ]"))
+
+                            .append(Component.literal("\n Select an option: "))
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.WHITE))
+                            .append(Component.literal("Accept ✔")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.GREEN)
+                                            .withBold(true)
+                                            .withClickEvent(new ClickEvent(
+                                                    ClickEvent.Action.RUN_COMMAND,
+                                                    "/tpaccept " + serverPlayer.getUUID()
+                                            ))
+                                            .withHoverEvent(new HoverEvent(
+                                                    HoverEvent.Action.SHOW_TEXT,
+                                                    Component.literal("Accept teleport request")
+                                            ))
+                                    ))
+                            .append(Component.literal(" | "))
+                            .append(Component.literal("Deny ✘")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.RED)
+                                            .withBold(true)
+                                            .withClickEvent(new ClickEvent(
+                                                    ClickEvent.Action.RUN_COMMAND,
+                                                    "/tpdeny" + serverPlayer.getUUID()
+                                            ))
+                                            .withHoverEvent(new HoverEvent(
+                                                    HoverEvent.Action.SHOW_TEXT,
+                                                    Component.literal("Deny teleport request")
+                                            ))
+                                    ))
+            ));
             return 1;
         }
         return -1;
@@ -47,6 +93,19 @@ public class TeleportManager {
                         .stream()
                         .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
+        return processTeleportRequestApproval(receiver, possibleTeleportRequest);
+    }
+
+    public static int approveTeleportRequestPlayer(ServerPlayer receiver, ServerPlayer target) {
+        Optional<TeleportRequest> possibleTeleportRequest =
+                TELEPORT_APPROVAL_REQUESTS.values()
+                        .stream()
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()) && tr.getSenderPlayer().getUUID().equals(target.getUUID()))
+                        .findFirst();
+        return processTeleportRequestApproval(receiver, possibleTeleportRequest);
+    }
+
+    private static int processTeleportRequestApproval(ServerPlayer receiver, Optional<TeleportRequest> possibleTeleportRequest) {
         if(possibleTeleportRequest.isPresent()){
             possibleTeleportRequest.get().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Approved, Teleporting.."));
             receiver.sendSystemMessage(
@@ -70,6 +129,19 @@ public class TeleportManager {
                         .stream()
                         .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
+        return processTeleportRequestDenial(receiver, possibleTeleportRequest);
+    }
+
+    public static int denyTeleportRequestPlayer(ServerPlayer receiver, ServerPlayer target){
+        Optional<TeleportRequest> possibleTeleportRequest =
+                TELEPORT_APPROVAL_REQUESTS.values()
+                        .stream()
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
+                        .findFirst();
+        return processTeleportRequestDenial(receiver, possibleTeleportRequest);
+    }
+
+    private static int processTeleportRequestDenial(ServerPlayer receiver, Optional<TeleportRequest> possibleTeleportRequest) {
         if(possibleTeleportRequest.isPresent()){
             TeleportRequest request = possibleTeleportRequest.get();
             request.getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Denied."));
