@@ -1,8 +1,10 @@
 {
-	"required": false,
-	"package": "net.syrupstudios.syrupessentials",
+	"required": true,
+	"package": "net.syrupstudios.syrupessentials.mixin",
 	"compatibilityLevel": "JAVA_17",
-	"mixins": [],
+	"mixins": [
+		"TeleportCommandMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	},

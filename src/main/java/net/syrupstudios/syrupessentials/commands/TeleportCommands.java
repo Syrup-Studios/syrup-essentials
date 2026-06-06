@@ -32,11 +32,6 @@ public class TeleportCommands {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("tp") //todo: this doesn't overwrite existing tp
-                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                .then(Commands.argument("player", EntityArgument.player())
-                        .executes(TeleportCommands::tp)));
-
         dispatcher.register(Commands.literal("tpa")
                 .then(Commands.argument("player", EntityArgument.player())
                         .executes(TeleportCommands::tpa)));
@@ -96,20 +91,6 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("back")
                 .executes(TeleportCommands::back));
-    }
-
-    private static int tp(CommandContext<CommandSourceStack> context) {
-        try {
-            ServerPlayer target = EntityArgument.getPlayer(context, "player");
-            teleportPlayer(
-                    new TeleportPos(target.level(), target.position(), target.getXRot(), target.getYRot()),
-                    context.getSource().getPlayerOrException(),
-                    true
-            );
-            return 1;
-        } catch (Exception e) {
-            return 0;
-        }
     }
 
     private static CompletableFuture<Suggestions> suggestHomes(

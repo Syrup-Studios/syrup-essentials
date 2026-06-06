@@ -9,7 +9,6 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 public class TeleportRequest {
-    private TeleportPos teleportPos;
     private UUID receiverPlayerUUID;
     private ServerPlayer senderPlayer;
     private long expiresAtTick;
