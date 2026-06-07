@@ -1,10 +1,15 @@
 package net.syrupstudios.syrupessentials.util;
 
+import com.mojang.logging.LogUtils;
 import lombok.NoArgsConstructor;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.syrupstudios.syrupessentials.data.PlayerData;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -17,6 +22,7 @@ public class TeleportManager {
     private static final HashMap<UUID, TeleportRequest> TELEPORT_APPROVAL_REQUESTS = new HashMap<>();
     private static final int TIMEOUT_THRESHOLD = 600; //TODO: replace w/ config timeout
     private static long currentTick;
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static int teleportRequest(ServerPlayer serverPlayer, MinecraftServer server, String destinationPlayerName){
         ServerPlayer target = server.getPlayerList().getPlayerByName(destinationPlayerName);
@@ -29,13 +35,59 @@ public class TeleportManager {
             TELEPORT_APPROVAL_REQUESTS.put(
                     serverPlayer.getUUID(),
                     new TeleportRequest(
-                            new TeleportPos(target.level(), target.position(), target.getXRot(), target.getYRot()),
                             target.getUUID(),
                             serverPlayer,
                             currentTick + TIMEOUT_THRESHOLD
                     ));
-            target.sendSystemMessage(Component.literal("Receiving teleport request from: "+serverPlayer.getDisplayName().getString()));
-            target.sendSystemMessage(Component.literal("Type /tpaccept or /tpdeny to respond"));
+
+            target.sendSystemMessage(
+                    Component.literal("Teleport request: ").withStyle(style -> style
+                                    .withColor(ChatFormatting.WHITE))
+                            .append(Component.literal("[ "))
+                            .append(Component.literal(serverPlayer.getDisplayName().getString())
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.AQUA))
+                            .append(Component.literal(" ➤ ")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.WHITE))
+                            .append(Component.literal(destinationPlayerName)
+                                    .withStyle(style -> style
+                                        .withColor(ChatFormatting.AQUA)))
+                            .append(Component.literal(" ]")))
+
+                            .append(Component.literal("\n Select an option: ")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.WHITE)))
+                            .append(Component.literal("Accept ✔")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.GREEN)
+                                            .withBold(true)
+                                            .withClickEvent(new ClickEvent(
+                                                    ClickEvent.Action.RUN_COMMAND,
+                                                    "/tpaccept " + serverPlayer.getUUID()
+                                            ))
+                                            .withHoverEvent(new HoverEvent(
+                                                    HoverEvent.Action.SHOW_TEXT,
+                                                    Component.literal("Accept teleport request")
+                                            ))
+                                    ))
+                            .append(Component.literal(" | ")
+                                    .withStyle(style -> style
+                                    .withColor(ChatFormatting.WHITE)))
+                            .append(Component.literal("Deny ✘")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.RED)
+                                            .withBold(true)
+                                            .withClickEvent(new ClickEvent(
+                                                    ClickEvent.Action.RUN_COMMAND,
+                                                    "/tpdeny " + serverPlayer.getUUID()
+                                            ))
+                                            .withHoverEvent(new HoverEvent(
+                                                    HoverEvent.Action.SHOW_TEXT,
+                                                    Component.literal("Deny teleport request")
+                                            ))
+                                    ))
+            ));
             return 1;
         }
         return -1;
@@ -47,6 +99,19 @@ public class TeleportManager {
                         .stream()
                         .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
+        return processTeleportRequestApproval(receiver, possibleTeleportRequest);
+    }
+
+    public static int approveTeleportRequestPlayer(ServerPlayer receiver, ServerPlayer target) {
+        Optional<TeleportRequest> possibleTeleportRequest =
+                TELEPORT_APPROVAL_REQUESTS.values()
+                        .stream()
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()) && tr.getSenderPlayer().getUUID().equals(target.getUUID()))
+                        .findFirst();
+        return processTeleportRequestApproval(receiver, possibleTeleportRequest);
+    }
+
+    private static int processTeleportRequestApproval(ServerPlayer receiver, Optional<TeleportRequest> possibleTeleportRequest) {
         if(possibleTeleportRequest.isPresent()){
             possibleTeleportRequest.get().getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Approved, Teleporting.."));
             receiver.sendSystemMessage(
@@ -70,6 +135,19 @@ public class TeleportManager {
                         .stream()
                         .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
                         .findFirst();
+        return processTeleportRequestDenial(receiver, possibleTeleportRequest);
+    }
+
+    public static int denyTeleportRequestPlayer(ServerPlayer receiver, ServerPlayer target){
+        Optional<TeleportRequest> possibleTeleportRequest =
+                TELEPORT_APPROVAL_REQUESTS.values()
+                        .stream()
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
+                        .findFirst();
+        return processTeleportRequestDenial(receiver, possibleTeleportRequest);
+    }
+
+    private static int processTeleportRequestDenial(ServerPlayer receiver, Optional<TeleportRequest> possibleTeleportRequest) {
         if(possibleTeleportRequest.isPresent()){
             TeleportRequest request = possibleTeleportRequest.get();
             request.getSenderPlayer().sendSystemMessage(Component.literal("Teleport Request Denied."));
@@ -112,8 +190,28 @@ public class TeleportManager {
                 }
         );
 
-        APPROVED_TELEPORTS.entrySet().removeIf(entry ->
-                teleportPlayer(entry.getValue().getTeleportPos(), entry.getValue().getSenderPlayer(), true));
+        APPROVED_TELEPORTS.entrySet().removeIf(entry -> {
+            try {
+                ServerPlayer target = Objects.requireNonNull(
+                        entry.getValue()
+                                .getSenderPlayer()
+                                .getServer())
+                        .getPlayerList()
+                        .getPlayer(entry.getValue().getReceiverPlayerUUID());
+                assert target != null;
+                teleportPlayer(
+                        new TeleportPos(target.level(), target.position(), target.getXRot(), target.getYRot()),
+                        entry.getValue().getSenderPlayer(),
+                        true
+                );
+
+            } catch (Exception e) {
+                LOGGER.error("Error while removing teleport from Approved Teleports for {}", entry);
+                return false;
+            }
+            return true;
+        });
+
     }
 
     public void flush(){

@@ -19,7 +19,9 @@
 			"net.syrupstudios.syrupessentials.SyrupEssentials"
 		]
 	},
-	"mixins": [],
+	"mixins": [
+		"syrup-essentials.mixins.json"
+	],
 	"depends": {
 		"fabricloader": ">=0.18.4",
 		"minecraft": "~1.20.1",

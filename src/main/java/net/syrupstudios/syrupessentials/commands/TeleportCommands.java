@@ -9,6 +9,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,9 +37,17 @@ public class TeleportCommands {
                         .executes(TeleportCommands::tpa)));
 
         dispatcher.register(Commands.literal("tpaccept")
+                .then(Commands.argument("UUID", UuidArgument.uuid())
+                        .executes(TeleportCommands::tpaAcceptPlayerUUID))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(TeleportCommands::tpaAcceptPlayer))
                 .executes(TeleportCommands::tpaAccept));
 
         dispatcher.register(Commands.literal("tpdeny")
+                .then(Commands.argument("UUID", UuidArgument.uuid())
+                        .executes(TeleportCommands::tpaDenyPlayerUUID))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(TeleportCommands::tpaDenyPlayer))
                 .executes(TeleportCommands::tpaDeny));
 
         dispatcher.register(Commands.literal("home")
@@ -308,7 +317,6 @@ public class TeleportCommands {
             PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
             Map<String, TeleportPos> homes = player.getHomes().getDestinations();
 
-
             if(homes.size() == 1){
                 teleportPlayer(homes.get(homes.keySet().iterator().next()), serverPlayer, true);
                 return 1;
@@ -351,8 +359,40 @@ public class TeleportCommands {
         return TeleportManager.denyTeleportRequest(context.getSource().getPlayer());
     }
 
+    private static int tpaDenyPlayer(CommandContext<CommandSourceStack> context) {
+        try{
+            return TeleportManager.denyTeleportRequestPlayer(
+                    context.getSource().getPlayer(),
+                    EntityArgument.getPlayer(context, "player"));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     private static int tpaAccept(CommandContext<CommandSourceStack> context) {
         return TeleportManager.approveTeleportRequest(context.getSource().getPlayer());
+    }
+
+    private static int tpaAcceptPlayer(CommandContext<CommandSourceStack> context) {
+        try{
+            return TeleportManager.approveTeleportRequestPlayer(
+                    context.getSource().getPlayer(),
+                    EntityArgument.getPlayer(context, "player"));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int tpaAcceptPlayerUUID(CommandContext<CommandSourceStack> context) {
+        return TeleportManager.approveTeleportRequestPlayer(
+                context.getSource().getPlayer(),
+                context.getSource().getServer().getPlayerList().getPlayer(UuidArgument.getUuid(context, "UUID")));
+    }
+
+    private static int tpaDenyPlayerUUID(CommandContext<CommandSourceStack> context) {
+        return TeleportManager.denyTeleportRequestPlayer(
+                context.getSource().getPlayer(),
+                context.getSource().getServer().getPlayerList().getPlayer(UuidArgument.getUuid(context, "UUID")));
     }
 
     private static int tpa(CommandContext<CommandSourceStack> context) {
