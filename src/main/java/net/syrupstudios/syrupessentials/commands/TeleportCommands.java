@@ -13,6 +13,7 @@ import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
 import net.syrupstudios.syrupessentials.util.CommandUtil;
@@ -91,6 +92,23 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("back")
                 .executes(TeleportCommands::back));
+
+        dispatcher.register(Commands.literal("spawn")
+                .executes(TeleportCommands::spawn));
+    }
+
+    private static int spawn(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
+            Level level = context.getSource().getLevel();
+            teleportPlayer(
+                    new TeleportPos(level.dimension() ,level.getSharedSpawnPos().getCenter(), level.getSharedSpawnPos())
+            )
+        } catch (Exception e) {
+            LOGGER.error("Error teleporting player to spawn", e);
+        }
+        return 0;
     }
 
     private static CompletableFuture<Suggestions> suggestHomes(
