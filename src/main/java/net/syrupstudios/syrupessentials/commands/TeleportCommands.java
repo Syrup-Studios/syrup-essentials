@@ -154,7 +154,7 @@ public class TeleportCommands {
     private static int spawn(CommandContext<CommandSourceStack> context) {
         try{
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
-            Level level = context.getSource().getLevel();
+            Level level = context.getSource().getServer().overworld();
             teleportPlayer(
                     new TeleportPos(level.dimension() ,level.getSharedSpawnPos().getCenter(), 0.0f, 0.0f),
                     serverPlayer,
