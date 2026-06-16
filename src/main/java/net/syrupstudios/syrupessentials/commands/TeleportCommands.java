@@ -106,6 +106,10 @@ public class TeleportCommands {
 
         dispatcher.register(Commands.literal("spawn")
                 .executes(TeleportCommands::spawn));
+
+        dispatcher.register(Commands.literal("tpahere")
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(TeleportCommands::tpahere)));
     }
 
     private static int tpx(CommandContext<CommandSourceStack> context) {
@@ -469,7 +473,7 @@ public class TeleportCommands {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
             player.addTeleportHistory(serverPlayer);
-            Integer result = TeleportManager.teleportRequest(
+            Integer result = TeleportManager.tpaRequest(
                     serverPlayer,
                     context.getSource().getServer(),
                     EntityArgument.getPlayer(context, "player").getDisplayName().getString()
@@ -484,6 +488,32 @@ public class TeleportCommands {
         } catch (Exception e) {
             CommandUtil.commandFailure("Unable To Process TPA Request.", context);
             LOGGER.error("Error processing TPA Request.",e);
+        }
+        return 0;
+    }
+
+    private static int tpahere(CommandContext<CommandSourceStack> context) {
+        try {
+            ServerPlayer sender = context.getSource().getPlayerOrException();
+            ServerPlayer target = EntityArgument.getPlayer(context, "player");
+            PlayerData player = DataManager.getOrCreatePlayer(sender).orElseThrow();
+            player.addTeleportHistory(sender);
+
+            int result = TeleportManager.tpaHereRequest(
+                    sender,
+                    context.getSource().getServer(),
+                    target.getDisplayName().getString()
+            );
+
+            if (result == 1) {
+                CommandUtil.commandSuccess("Sending Teleport-Here Request..", context);
+            } else {
+                CommandUtil.commandFailure("Unable to Send Teleport-Here Request", context);
+            }
+            return result;
+        } catch (Exception e) {
+            CommandUtil.commandFailure("Unable To Process Teleport-Here Request.", context);
+            LOGGER.error("Error processing Teleport-Here Request.", e);
         }
         return 0;
     }
