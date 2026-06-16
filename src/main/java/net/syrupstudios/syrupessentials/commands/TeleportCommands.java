@@ -8,6 +8,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
@@ -81,11 +82,21 @@ public class TeleportCommands {
                 .then(Commands.argument("warp_name", StringArgumentType.string())
                         .executes(TeleportCommands::setWarp)));
 
+        dispatcher.register(Commands.literal("teleport_last")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(TeleportCommands::teleportLast)));
+
         dispatcher.register(Commands.literal("delwarp")
                 .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("warp_name", StringArgumentType.string())
                         .suggests(TeleportCommands::suggestWarps)
                         .executes(TeleportCommands::delWarp)));
+
+        dispatcher.register(Commands.literal("tpx")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.argument("dimension", DimensionArgument.dimension())
+                        .executes(TeleportCommands::tpx)));
 
         dispatcher.register(Commands.literal("listwarps")
                 .executes(TeleportCommands::listWarps));
@@ -97,14 +108,54 @@ public class TeleportCommands {
                 .executes(TeleportCommands::spawn));
     }
 
+    private static int tpx(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            teleportPlayer(
+                    new TeleportPos(DimensionArgument.getDimension(context, "dimension"), serverPlayer.position(), 0.0f, 0.0f),
+                    serverPlayer,
+                    true
+            );
+        } catch (Exception e) {
+            LOGGER.error("Error teleporting player to other dimension", e);
+        }
+        return 0;
+    }
+
+    private static int teleportLast(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = EntityArgument.getPlayer(context, "player");
+            PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
+            Optional<TeleportPos> lastLocation = player.popLocationHistory();
+
+            if(lastLocation.isPresent()){
+                teleportPlayer(lastLocation.get(), context.getSource().getPlayerOrException(), true);
+                CommandUtil.commandSuccess(
+                        String.format("Teleporting to last location of %s",
+                                serverPlayer.getDisplayName().getString()), context);
+                return 1;
+            }
+            else {
+                CommandUtil.commandFailure(
+                        String.format("No Previous location to teleport to for player %s..",
+                                serverPlayer.getDisplayName().getString()), context);
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error teleporting admin to other player's last location", e);
+        }
+        return 0;
+    }
+
     private static int spawn(CommandContext<CommandSourceStack> context) {
         try{
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
-            PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
             Level level = context.getSource().getLevel();
             teleportPlayer(
-                    new TeleportPos(level.dimension() ,level.getSharedSpawnPos().getCenter(), level.getSharedSpawnPos())
-            )
+                    new TeleportPos(level.dimension() ,level.getSharedSpawnPos().getCenter(), 0.0f, 0.0f),
+                    serverPlayer,
+                    true
+            );
         } catch (Exception e) {
             LOGGER.error("Error teleporting player to spawn", e);
         }

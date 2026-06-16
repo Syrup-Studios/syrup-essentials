@@ -37,7 +37,8 @@ public class TeleportManager {
                     new TeleportRequest(
                             target.getUUID(),
                             serverPlayer,
-                            currentTick + TIMEOUT_THRESHOLD
+                            currentTick + TIMEOUT_THRESHOLD,
+                            false
                     ));
 
             target.sendSystemMessage(
@@ -142,7 +143,7 @@ public class TeleportManager {
         Optional<TeleportRequest> possibleTeleportRequest =
                 TELEPORT_APPROVAL_REQUESTS.values()
                         .stream()
-                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()))
+                        .filter(tr -> tr.getReceiverPlayerUUID().equals(receiver.getUUID()) && tr.getSenderPlayer().getUUID().equals(target.getUUID()))
                         .findFirst();
         return processTeleportRequestDenial(receiver, possibleTeleportRequest);
     }
