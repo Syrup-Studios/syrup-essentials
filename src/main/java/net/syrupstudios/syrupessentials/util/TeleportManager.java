@@ -352,7 +352,7 @@ public class TeleportManager {
                 true
         );
         player.sendSystemMessage(
-                Component.literal("Jumped to targeted block column."));
+                Component.literal("Jumped to targeted block."));
         return 1;
     }
 }
