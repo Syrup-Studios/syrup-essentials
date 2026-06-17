@@ -1,14 +1,24 @@
 package net.syrupstudios.syrupessentials.util;
 
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import lombok.NoArgsConstructor;
 import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import org.slf4j.Logger;
 
@@ -308,5 +318,56 @@ public class TeleportManager {
         TELEPORT_APPROVAL_REQUESTS.clear();
         APPROVED_TELEPORTS.clear();
         currentTick =0;
+    }
+
+    public static int jump(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+
+        double maxDistance = 128.0D;
+
+        Vec3 start = player.getEyePosition();
+        Vec3 look = player.getLookAngle();
+        Vec3 end = start.add(look.scale(maxDistance));
+
+        BlockHitResult hitResult = level.clip(new ClipContext(
+                start,
+                end,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                player
+        ));
+
+        if (hitResult.getType() == HitResult.Type.MISS) {
+            player.sendSystemMessage(
+                    Component.literal("No block in sight."));
+            return 0;
+        }
+
+        BlockPos lookedAtBlock = hitResult.getBlockPos();
+
+        BlockPos topOfColumn = level.getHeightmapPos(
+                Heightmap.Types.MOTION_BLOCKING,
+                lookedAtBlock
+        );
+
+//        player.teleportTo(
+//                level,
+//                topOfColumn.getX() + 0.5D,
+//                topOfColumn.getY(),
+//                topOfColumn.getZ() + 0.5D,
+//                player.getYRot(),
+//                player.getXRot()
+//        );
+        TeleportManager.teleportPlayer(
+                new TeleportPos(level, Vec3.atCenterOf(topOfColumn), player.getXRot(), player.getYRot()),
+                player,
+                true
+        );
+
+        player.sendSystemMessage(
+                Component.literal("Jumped to targeted block column."));
+
+        return 1;
     }
 }

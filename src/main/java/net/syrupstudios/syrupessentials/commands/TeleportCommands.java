@@ -3,6 +3,7 @@ package net.syrupstudios.syrupessentials.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.logging.LogUtils;
@@ -11,8 +12,10 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.UuidArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.syrupstudios.syrupessentials.data.PlayerData;
@@ -110,6 +113,10 @@ public class TeleportCommands {
         dispatcher.register(Commands.literal("tpahere")
                 .then(Commands.argument("player", EntityArgument.player())
                         .executes(TeleportCommands::tpahere)));
+
+        dispatcher.register(Commands.literal("jump")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .executes(TeleportCommands::jump));
     }
 
     private static int tpx(CommandContext<CommandSourceStack> context) {
@@ -122,6 +129,15 @@ public class TeleportCommands {
             );
         } catch (Exception e) {
             LOGGER.error("Error teleporting player to other dimension", e);
+        }
+        return 0;
+    }
+
+    public static int jump(CommandContext<CommandSourceStack> context) {
+        try{
+            return TeleportManager.jump(context);
+        } catch (Exception e) {
+            LOGGER.error("Error jumping to position", e);
         }
         return 0;
     }

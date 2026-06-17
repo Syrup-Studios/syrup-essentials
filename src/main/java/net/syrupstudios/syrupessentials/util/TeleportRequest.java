@@ -24,7 +24,7 @@ public class TeleportRequest {
         this.teleportRequestType = isTpaHere ? TeleportRequestType.TPAHERE : TeleportRequestType.TPA;
     }
 
-    public boolean isTpaHere(){
+    public boolean isTpaHere() {
         return teleportRequestType.equals(TeleportRequestType.TPAHERE);
     }
 }
