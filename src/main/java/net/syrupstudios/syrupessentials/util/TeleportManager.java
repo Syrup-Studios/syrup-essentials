@@ -323,9 +323,7 @@ public class TeleportManager {
     public static int jump(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         ServerLevel level = player.serverLevel();
-
         double maxDistance = 128.0D;
-
         Vec3 start = player.getEyePosition();
         Vec3 look = player.getLookAngle();
         Vec3 end = start.add(look.scale(maxDistance));
@@ -343,31 +341,18 @@ public class TeleportManager {
                     Component.literal("No block in sight."));
             return 0;
         }
-
         BlockPos lookedAtBlock = hitResult.getBlockPos();
-
         BlockPos topOfColumn = level.getHeightmapPos(
                 Heightmap.Types.MOTION_BLOCKING,
                 lookedAtBlock
         );
-
-//        player.teleportTo(
-//                level,
-//                topOfColumn.getX() + 0.5D,
-//                topOfColumn.getY(),
-//                topOfColumn.getZ() + 0.5D,
-//                player.getYRot(),
-//                player.getXRot()
-//        );
         TeleportManager.teleportPlayer(
                 new TeleportPos(level, Vec3.atCenterOf(topOfColumn), player.getXRot(), player.getYRot()),
                 player,
                 true
         );
-
         player.sendSystemMessage(
                 Component.literal("Jumped to targeted block column."));
-
         return 1;
     }
 }
