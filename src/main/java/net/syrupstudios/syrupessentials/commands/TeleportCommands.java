@@ -3,16 +3,21 @@ package net.syrupstudios.syrupessentials.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.UuidArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.syrupstudios.syrupessentials.data.PlayerData;
 import net.syrupstudios.syrupessentials.data.WorldData;
 import net.syrupstudios.syrupessentials.util.CommandUtil;
@@ -80,17 +85,101 @@ public class TeleportCommands {
                 .then(Commands.argument("warp_name", StringArgumentType.string())
                         .executes(TeleportCommands::setWarp)));
 
+        dispatcher.register(Commands.literal("teleport_last")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(TeleportCommands::teleportLast)));
+
         dispatcher.register(Commands.literal("delwarp")
                 .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("warp_name", StringArgumentType.string())
                         .suggests(TeleportCommands::suggestWarps)
                         .executes(TeleportCommands::delWarp)));
 
+        dispatcher.register(Commands.literal("tpx")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.argument("dimension", DimensionArgument.dimension())
+                        .executes(TeleportCommands::tpx)));
+
         dispatcher.register(Commands.literal("listwarps")
                 .executes(TeleportCommands::listWarps));
 
         dispatcher.register(Commands.literal("back")
                 .executes(TeleportCommands::back));
+
+        dispatcher.register(Commands.literal("spawn")
+                .executes(TeleportCommands::spawn));
+
+        dispatcher.register(Commands.literal("tpahere")
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(TeleportCommands::tpahere)));
+
+        dispatcher.register(Commands.literal("jump")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .executes(TeleportCommands::jump));
+    }
+
+    private static int tpx(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            teleportPlayer(
+                    new TeleportPos(DimensionArgument.getDimension(context, "dimension"), serverPlayer.position(), 0.0f, 0.0f),
+                    serverPlayer,
+                    true
+            );
+        } catch (Exception e) {
+            LOGGER.error("Error teleporting player to other dimension", e);
+        }
+        return 0;
+    }
+
+    public static int jump(CommandContext<CommandSourceStack> context) {
+        try{
+            return TeleportManager.jump(context);
+        } catch (Exception e) {
+            LOGGER.error("Error jumping to position", e);
+        }
+        return 0;
+    }
+
+    private static int teleportLast(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = EntityArgument.getPlayer(context, "player");
+            PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
+            Optional<TeleportPos> lastLocation = player.popLocationHistory();
+
+            if(lastLocation.isPresent()){
+                teleportPlayer(lastLocation.get(), context.getSource().getPlayerOrException(), true);
+                CommandUtil.commandSuccess(
+                        String.format("Teleporting to last location of %s",
+                                serverPlayer.getDisplayName().getString()), context);
+                return 1;
+            }
+            else {
+                CommandUtil.commandFailure(
+                        String.format("No Previous location to teleport to for player %s..",
+                                serverPlayer.getDisplayName().getString()), context);
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error teleporting admin to other player's last location", e);
+        }
+        return 0;
+    }
+
+    private static int spawn(CommandContext<CommandSourceStack> context) {
+        try{
+            ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
+            Level level = context.getSource().getServer().overworld();
+            teleportPlayer(
+                    new TeleportPos(level.dimension() ,level.getSharedSpawnPos().getCenter(), 0.0f, 0.0f),
+                    serverPlayer,
+                    true
+            );
+        } catch (Exception e) {
+            LOGGER.error("Error teleporting player to spawn", e);
+        }
+        return 0;
     }
 
     private static CompletableFuture<Suggestions> suggestHomes(
@@ -400,7 +489,7 @@ public class TeleportCommands {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             PlayerData player = DataManager.getOrCreatePlayer(serverPlayer).orElseThrow();
             player.addTeleportHistory(serverPlayer);
-            Integer result = TeleportManager.teleportRequest(
+            Integer result = TeleportManager.tpaRequest(
                     serverPlayer,
                     context.getSource().getServer(),
                     EntityArgument.getPlayer(context, "player").getDisplayName().getString()
@@ -415,6 +504,32 @@ public class TeleportCommands {
         } catch (Exception e) {
             CommandUtil.commandFailure("Unable To Process TPA Request.", context);
             LOGGER.error("Error processing TPA Request.",e);
+        }
+        return 0;
+    }
+
+    private static int tpahere(CommandContext<CommandSourceStack> context) {
+        try {
+            ServerPlayer sender = context.getSource().getPlayerOrException();
+            ServerPlayer target = EntityArgument.getPlayer(context, "player");
+            PlayerData player = DataManager.getOrCreatePlayer(sender).orElseThrow();
+            player.addTeleportHistory(sender);
+
+            int result = TeleportManager.tpaHereRequest(
+                    sender,
+                    context.getSource().getServer(),
+                    target.getDisplayName().getString()
+            );
+
+            if (result == 1) {
+                CommandUtil.commandSuccess("Sending Teleport-Here Request..", context);
+            } else {
+                CommandUtil.commandFailure("Unable to Send Teleport-Here Request", context);
+            }
+            return result;
+        } catch (Exception e) {
+            CommandUtil.commandFailure("Unable To Process Teleport-Here Request.", context);
+            LOGGER.error("Error processing Teleport-Here Request.", e);
         }
         return 0;
     }
