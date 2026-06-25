@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SyrupEssentials implements ModInitializer {
-	public static final String MOD_ID = "syrup-essentials";
+	public static final String MOD_ID = "syrup_essentials";
 	private DataManager dataManager;
 	private TeleportManager teleportManager;
 
